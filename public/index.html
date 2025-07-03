@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery Rental Status</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 10px 20px;
+            background-color: #000000;
+            color: #FFFFFF;
+            height: 100vh;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px 15px;
+            }
+        }
+
+        #output {
+            margin: 0px;
+        }
+
+        .view-locations-btn {
+            display: block;
+            width: calc(100% - 20px);
+            margin: 8px 10px;
+            padding: 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #006DAA;
+            border: 1px solid #3789BC;
+            border-radius: 20px;
+            cursor: pointer;
+            text-align: left;
+            height: auto;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+            .view-locations-btn {
+                width: calc(100% - 10px);
+                margin: 8px 5px;
+                padding: 18px 16px;
+            }
+        }
+
+        .view-locations-btn:hover {
+            background-color: #005A8C;
+        }
+
+        #batteryIdDisplay {
+            font-weight: bold;
+            margin-top: 30px;
+            font-weight: bold;
+            font-size: 30px;
+            color: #1F1F1F;
+        }
+
+        #elapsedTime {
+            margin: 0px;
+            font-size: 75px;
+            font-weight: bold;
+            color: #FFFFFF;
+            padding: 0px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        #amountPaid {
+            margin-top: 10px;
+            margin-bottom: -10px;
+            margin-left: 0px;
+            margin-right: 0px;
+            font-size: 50px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-style: normal;
+            color: #009FFF;
+            padding: 0px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .containers-wrapper {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 0 10px;
+        }
+
+        @media (max-width: 768px) {
+            .containers-wrapper {
+                margin: 0 5px;
+                gap: 6px;
+            }
+        }
+
+        #amountPaidContainer {
+            background-color: #000000;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #262626;
+            text-align: left;
+            flex: 1;
+            box-sizing: border-box;
+        }
+
+        #newContainer {
+            background-color: #FE402E;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #FF776B;
+            text-align: left;
+            flex: 1;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .sizl-text {
+            position: absolute;
+            font-size: 30px;
+            color: #FFFFFF;
+            font-family: Arial, sans-serif;
+            right: 10px;
+            bottom: 5px;
+        }
+
+        #newContainer > div:not(.sizl-text) {
+            position: relative;
+            z-index: 2;
+        }
+
+        #newContainer:hover {
+            background-color: #d63426;
+        }
+
+        #newContainerValue {
+            margin-top: -10px;
+            margin-bottom: -10px;
+            margin-left: 0px;
+            margin-right: 0px;
+            font-size: 75px;
+            font-family: "Jersey 10", serif;
+            font-weight: 400;
+            font-style: normal;
+            color: #FFFFFF;
+            padding: 0px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        #elapsedTimeContainer {
+            Margin-top: 40px;
+            Margin-bottom: 40px;
+            text-align: Center;
+        }
+
+        #phoneForm {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .phone-popup {
+            background-color: #1F1F1F;
+            border: 2px solid #262626;
+            border-radius: 20px;
+            padding: 30px 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            max-width: 380px;
+            width: calc(100% - 40px);
+            text-align: center;
+            margin: 0 20px;
+        }
+
+        @media (max-width: 768px) {
+            .phone-popup {
+                padding: 25px 20px;
+                border-radius: 15px;
+                width: calc(100% - 40px);
+                margin: 0 20px;
+            }
+        }
+
+        .phone-popup h1 {
+            color: #FFFFFF;
+            margin-bottom: 10px;
+            font-size: 28px;
+            margin-top: 0;
+        }
+
+        .phone-popup p {
+            color: #CCCCCC;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        #phoneInput {
+            width: 100%;
+            max-width: 280px;
+            padding: 12px 16px;
+            font-size: 17px;
+            border: 2px solid #262626;
+            border-radius: 12px;
+            background-color: #000000;
+            color: #FFFFFF;
+            margin-bottom: 20px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+            #phoneInput {
+                font-size: 16px;
+                padding: 14px 16px;
+                border-radius: 10px;
+                max-width: 100%;
+            }
+        }
+
+        #phoneInput:focus {
+            outline: none;
+            border-color: #009FFF;
+        }
+
+        #submitPhoneBtn {
+            width: 100%;
+            max-width: 280px;
+            padding: 14px 16px;
+            font-size: 17px;
+            font-weight: bold;
+            color: white;
+            background-color: #009FFF;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+            #submitPhoneBtn {
+                font-size: 16px;
+                padding: 16px;
+                border-radius: 10px;
+                max-width: 100%;
+            }
+        }
+
+        #submitPhoneBtn:hover {
+            background-color: #007ACC;
+        }
+
+        #submitPhoneBtn:disabled {
+            background-color: #666666;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #FE402E;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .support-btn {
+            display: block;
+            width: calc(100% - 20px);
+            color: white;
+            background-color: #1F1F1F;
+            border: 1px solid #262626;
+            border-radius: 20px;
+            cursor: pointer;
+            text-align: left;
+            padding: 20px;
+            margin: 8px 10px 0;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+            .support-btn {
+                width: calc(100% - 10px);
+                margin: 8px 5px 0;
+                padding: 18px 16px;
+            }
+        }
+
+        .support-btn:hover {
+            background-color: #262626;
+        }
+
+        /* Map Styles */
+        #mapContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: #000000;
+            z-index: 10000;
+            display: none;
+        }
+
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10001;
+            background-color: #000000;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .back-button:hover {
+            background-color: #333333;
+        }
+
+        .mapboxgl-popup-content {
+            background-color: #1F1F1F;
+            color: #FFFFFF;
+            border-radius: 8px;
+        }
+
+        .mapboxgl-popup-tip {
+            border-top-color: #1F1F1F;
+        }
+
+        .station-info {
+            padding: 5px;
+        }
+
+        .station-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .station-address {
+            font-size: 14px;
+            color: #CCCCCC;
+        }
+
+        .bottom-popup {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #000000;
+            color: #FFFFFF;
+            padding: 20px;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            border-top: 2px solid #333333;
+            z-index: 10002;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-in-out;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+        }
+
+        .bottom-popup.show {
+            transform: translateY(0);
+        }
+
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .popup-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #FFFFFF;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #CCCCCC;
+        }
+
+        .availability-info {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .availability-item {
+            flex: 1;
+        }
+
+        .availability-number {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .available {
+            color: #4CAF50;
+        }
+
+        .occupied {
+            color: #FF6B6B;
+        }
+
+        .availability-label {
+            font-size: 14px;
+            color: #CCCCCC;
+        }
+
+        .directions-btn {
+            width: 100%;
+            background-color: #009FFF;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .directions-btn:hover {
+            background-color: #007ACC;
+        }
+
+        .station-address-popup {
+            font-size: 14px;
+            color: #CCCCCC;
+            margin-bottom: 10px;
+        }
+
+        .rental-status-window {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 1.0);
+            color: #FFFFFF;
+            padding: 15px;
+            border-radius: 20px;
+            z-index: 10003;
+            min-width: 200px;
+            border: 1px solid #333333;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .status-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-label {
+            font-size: 14px;
+            color: #CCCCCC;
+            font-weight: normal;
+        }
+
+        .status-value {
+            font-size: 16px;
+            color: #FFFFFF;
+            font-weight: bold;
+        }
+
+        #statusAmount {
+            color: #009FFF;
+        }
+    </style>
+</head>
+<body>
+    <!-- Rental Status Window -->
+    <div id="rentalStatus" class="rental-status-window" style="display: none;">
+        <div class="status-content">
+            <div class="status-row">
+                <span class="status-label">Duration:</span>
+                <span id="statusDuration" class="status-value">--:--:--</span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">Paid:</span>
+                <span id="statusAmount" class="status-value">$0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="mapContainer">
+        <button class="back-button" onclick="hideMap()">×</button>
+        <div id="map"></div>
+
+        <div id="bottomPopup" class="bottom-popup">
+            <div class="popup-header">
+                <div class="popup-title" id="popupTitle">Station Name</div>
+                <button class="close-btn" onclick="closeBottomPopup()">×</button>
+            </div>
+            <div class="station-address-popup" id="popupAddress">Address</div>
+            <div class="availability-info">
+                <div class="availability-item">
+                    <div class="availability-number available" id="availableSlots">8</div>
+                    <div class="availability-label">Available</div>
+                </div>
+                <div class="availability-item">
+                    <div class="availability-number occupied" id="occupiedSlots">4</div>
+                    <div class="availability-label">Occupied</div>
+                </div>
+            </div>
+            <button class="directions-btn" onclick="openDirections()">Get Directions</button>
+        </div>
+    </div>
+
+    <div id="phoneForm" style="display: none;">
+        <div class="phone-popup">
+            <h1>Add your phone number to access discount!</h1>
+            <input type="tel" id="phoneInput" placeholder="(555) 123-4567" maxlength="14">
+            <button id="submitPhoneBtn" onclick="submitPhoneNumber()">Continue</button>
+            <div id="phoneError" class="error-message"></div>
+        </div>
+    </div>
+
+    <div id="output" style="display: none;">
+        <div id="elapsedTimeContainer">
+            <p style="
+                margin: 0px;
+                font-size: 25px;
+                font-weight: bold;
+                color: #CCCCCC;
+            ">
+                Rent Duration
+            </p>
+            <p id="elapsedTime" style="font-size: 20px; color: #CCCCCC;">Loading...</p>
+        </div>
+
+        <div class="containers-wrapper">
+            <div id="amountPaidContainer">
+                <p style="
+                    margin: 0px;
+                    font-size: 20px;
+                    font-family: Arial, sans-serif;
+                    font-weight: bold;
+                    font-style: normal;
+                    color: #CCCCCC;
+                    width: fit-content;
+                ">
+                    Paid
+                </p>
+                <p id="amountPaid" style="font-size: 20px; color: #CCCCCC; font-family: Arial, sans-serif; font-weight: normal;">Loading...</p>
+            </div>
+
+            <div id="newContainer" onclick="handleSizlButtonClick()">
+                <div style="
+                    font-size: 25px;
+                    font-family: Arial, sans-serif;
+                    font-weight: bold;
+                    color: #FFFFFF;
+                    margin: 0px;
+                ">
+                    $3 OFF
+                </div>
+                <div style="
+                    font-size: 13px;
+                    font-family: Arial, sans-serif;
+                    color: #FFFFFF;
+                    margin-top: 10px;
+                    line-height: 1.3;
+                ">
+                    Download and register the sizl app to get money back
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="buttons-container" style="display: none;">
+        <button class="view-locations-btn" onclick="showMap()">
+            <div style="
+                font-size: 25px;
+                font-weight: bold;
+            ">
+                Find locations to return
+            </div>
+            <div style="
+                font-size: 13px;
+                color: #9D9D9D;
+                margin-top: 10px;
+                opacity: 0;
+                height: 15px;
+            ">
+                &nbsp;
+            </div>
+        </button>
+
+        <button class="support-btn" onclick="contactSupport()">
+            <div style="
+                font-size: 25px;
+                font-weight: bold;
+            ">
+                Customer Support
+            </div>
+            <div style="
+                font-size: 13px;
+                color: #9D9D9D;
+                margin-top: 10px;
+            ">
+                Questions, Complaints, Refunds
+            </div>
+        </button>
+    </div>
+
+    <p id="batteryIdDisplay"></p>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.4.4/luxon.min.js"></script>
+    <script>
+        const { DateTime } = luxon;
+        let borrowTime = null;
+        let phoneSubmitted = false;
+        let map = null;
+        let currentStation = null;
+        let selectedStationIndex = -1;
+        let statusUpdateInterval = null;
+        let currentBatteryId = null;
+
+        // DePaul University station locations
+        const stations = [
+            {
+                name: 'DePaul University LP Student Center',
+                address: 'LP Student Center, 1st Floor, Chicago, IL',
+                coordinates: [-87.65415, 41.92335],
+                available: 8,
+                occupied: 4
+            },
+            {
+                name: 'DePaul University Coleman Entrepreneurship Center',
+                address: 'Coleman Entrepreneurship Center, 7th floor, Room 7900, Chicago, IL',
+                coordinates: [-87.62716, 41.87767],
+                available: 12,
+                occupied: 0
+            },
+            {
+                name: 'DePaul University Loop Student Center',
+                address: 'Loop Student Center, 11th Floor, Chicago, IL',
+                coordinates: [-87.62726, 41.87799],
+                available: 3,
+                occupied: 9
+            },
+            {
+                name: 'DePaul University Theater School',
+                address: 'Theater School, 1st Floor, Chicago, IL',
+                coordinates: [-87.65875687443715, 41.92483761368347],
+                available: 6,
+                occupied: 6
+            }
+        ];
+
+        function convertChinaToChicagoTime(chinaTimeStr) {
+            return chinaTimeStr ? DateTime.fromISO(chinaTimeStr, { zone: "Asia/Shanghai" }).setZone("America/Chicago") : null;
+        }
+
+        function getTimeElapsed(startTime) {
+            if (!startTime) return "Invalid Time";
+            const diff = DateTime.now().setZone("America/Chicago").diff(startTime, ['hours', 'minutes', 'seconds']);
+            const hours = String(diff.hours).padStart(2, '0');
+            const minutes = String(diff.minutes).padStart(2, '0');
+            const seconds = String(Math.floor(diff.seconds)).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+
+        function calculateAmountPaid(startTime) {
+            if (!startTime) return "$0.00";
+            const hoursElapsed = DateTime.now().diff(startTime, 'hours').hours;
+            let amount = 0;
+
+            if (hoursElapsed <= 72) {
+                const days = Math.ceil(hoursElapsed / 24);
+                amount = days * 3;
+            } else {
+                amount = 40;
+            }
+
+            return `$${amount.toFixed(2)}`;
+        }
+
+        function updateElapsedTime() {
+            if (borrowTime) {
+                document.getElementById("elapsedTime").textContent = getTimeElapsed(borrowTime);
+                document.getElementById("amountPaid").textContent = calculateAmountPaid(borrowTime);
+
+                // Update rental status window if visible
+                if (document.getElementById('rentalStatus').style.display !== 'none') {
+                    document.getElementById('statusDuration').textContent = getTimeElapsed(borrowTime);
+                    document.getElementById('statusAmount').textContent = calculateAmountPaid(borrowTime);
+                }
+            }
+        }
+
+        function showRentalStatus() {
+            // Only show rental status window when map is visible
+            if (borrowTime && document.getElementById('mapContainer').style.display === 'block') {
+                document.getElementById('rentalStatus').style.display = 'block';
+                document.getElementById('statusDuration').textContent = getTimeElapsed(borrowTime);
+                document.getElementById('statusAmount').textContent = calculateAmountPaid(borrowTime);
+
+                if (statusUpdateInterval) clearInterval(statusUpdateInterval);
+                statusUpdateInterval = setInterval(updateElapsedTime, 1000);
+            }
+        }
+
+        async function fetchBatteryData() {
+            const batteryId = window.location.pathname.substring(1);
+            currentBatteryId = batteryId;
+            const outputDiv = document.getElementById("output");
+            const batteryIdDisplay = document.getElementById("batteryIdDisplay");
+
+            if (!batteryId) {
+                batteryIdDisplay.textContent = "Demo Battery";
+                const randomMinutes = Math.floor(Math.random() * 60) + 1;
+                borrowTime = DateTime.now().minus({ minutes: randomMinutes });
+
+                outputDiv.innerHTML = `
+                <div id="elapsedTimeContainer">
+                    <p style="
+                        margin: 0px;
+                        font-size: 25px;
+                        font-weight: bold;
+                        color: #CCCCCC;
+                    ">
+                        Rent Duration (Demo)
+                    </p>
+                    <p id="elapsedTime">${getTimeElapsed(borrowTime)}</p>
+                </div>
+
+                <div class="containers-wrapper">
+                    <div id="amountPaidContainer">
+                        <p style="
+                            margin: 0px;
+                            font-size: 20px;
+                            font-family: Arial, sans-serif;
+                            font-weight: bold;
+                            font-style: normal;
+                            color: #CCCCCC;
+                            width: fit-content;
+                        ">
+                            Paid
+                        </p>
+                        <p id="amountPaid" style="font-family: Arial, sans-serif; font-weight: bold; font-size: 50px;">$3.00</p>
+                    </div>
+
+                    <div id="newContainer" onclick="window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');">
+                        <div style="
+                            font-size: 20px;
+                            font-family: Arial, sans-serif;
+                            font-weight: bold;
+                            color: #FFFFFF;
+                            margin: 0px;
+                        ">
+                            $3 OFF
+                        </div>
+                        <div style="
+                            font-size: 13px;
+                            font-family: Arial, sans-serif;
+                            color: #FFFFFF;
+                            margin-top: 10px;
+                            line-height: 1.3;
+                        ">
+                            Download and register<br>
+                            the sizl app to get<br>
+                            money back
+                        </div>
+                        <div class="sizl-text"><i>s</i>izl</div>
+                    </div>
+                </div>
+            `;
+                showRentalStatus();
+                return;
+            }
+
+            batteryIdDisplay.textContent = `${batteryId}`;
+            const host = window.location.hostname;
+            const port = window.location.port ? `:${window.location.port}` : '';
+            const protocol = window.location.protocol;
+            const apiUrl = `${protocol}//${host}${port}/api/battery/${batteryId}`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error("Battery not found");
+
+                const data = await response.json();
+                outputDiv.innerHTML = "";
+
+                if (data.pGhtime) {
+                    const chiReturnTime = convertChinaToChicagoTime(data.pGhtime);
+                    const finalAmountPaid = data.finalAmountPaid || calculateAmountPaid(convertChinaToChicagoTime(data.pBorrowtime), chiReturnTime);
+
+                    outputDiv.innerHTML = `
+                    <div id="elapsedTimeContainer">
+                        <p style="
+                            margin: 0px;
+                            font-size: 50px;
+                            font-weight: bold;
+                            color: #CCCCCC;
+                        ">
+                            Battery Returned
+                        </p>
+                    </div>
+
+                    <div class="containers-wrapper">
+                        <div id="amountPaidContainer">
+                            <p style="
+                                margin: 0px;
+                                font-size: 20px;
+                                font-family: Arial, sans-serif;
+                                font-weight: bold;
+                                font-style: normal;
+                                color: #CCCCCC;
+                                width: fit-content;
+                            ">
+                                Paid
+                            </p>
+                            <p id="amountPaid" style="font-family: Arial, sans-serif; font-weight: bold; font-size: 50px;">${finalAmountPaid}</p>
+                        </div>
+                    </div>
+                `;
+                } else {
+                    borrowTime = convertChinaToChicagoTime(data.pBorrowtime);
+                    if (borrowTime) {
+                        outputDiv.innerHTML = `
+                        <div id="elapsedTimeContainer">
+                            <p style="
+                                margin: 0px;
+                                font-size: 25px;
+                                font-weight: bold;
+                                color: #CCCCCC;
+                            ">
+                                Rent Duration
+                            </p>
+                            <p id="elapsedTime" style="font-size: 20px; color: #CCCCCC;">Loading...</p>
+                        </div>
+
+                        <div class="containers-wrapper">
+                            <div id="amountPaidContainer">
+                                <p style="
+                                    margin: 0px;
+                                    font-size: 20px;
+                                    font-family: Arial, sans-serif;
+                                    font-weight: bold;
+                                    font-style: normal;
+                                    color: #CCCCCC;
+                                    width: fit-content;
+                                ">
+                                    Paid
+                                </p>
+                                <p id="amountPaid" style="font-size: 20px; color: #CCCCCC; font-family: Arial, sans-serif; font-weight: normal;">Loading...</p>
+                            </div>
+                        </div>
+                    `;
+                        showRentalStatus();
+                    } else {
+                        outputDiv.innerHTML = `<p><strong>Invalid Borrow Time</strong></p>`;
+                    }
+                }
+            } catch (error) {
+                outputDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+                console.error("Error:", error.message);
+            }
+        }
+
+        function showMap() {
+            document.getElementById('mapContainer').style.display = 'block';
+
+            if (!map) {
+                initializeMap();
+            }
+
+            // Show rental status window when map is opened
+            showRentalStatus();
+        }
+
+        function hideMap() {
+            document.getElementById('mapContainer').style.display = 'none';
+            closeBottomPopup();
+
+            // Hide rental status window when map is closed
+            document.getElementById('rentalStatus').style.display = 'none';
+            if (statusUpdateInterval) {
+                clearInterval(statusUpdateInterval);
+                statusUpdateInterval = null;
+            }
+        }
+
+        function initializeMap() {
+            mapboxgl.accessToken = 'pk.eyJ1IjoidmxhZHZhbGNoa291IiwiYSI6ImNtYzlhemFpZTF2MXUya29sNzM4OXhuZjYifQ.jrfH07QPTw_XfnmXXv42Pw';
+
+            map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/streets-v12',
+                center: [-87.64, 41.90],
+                zoom: 12            });
+
+            map.on('load', () => {
+                map.addSource('stations', {
+                    'type': 'geojson',
+                    'data': {
+                        'type': 'FeatureCollection',
+                        'features': stations.map((station, index) => ({
+                            'type': 'Feature',
+                            'properties': {
+                                'name': station.name,
+                                'address': station.address,
+                                'available': station.available,
+                                'occupied': station.occupied,
+                                'index': index
+                            },
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': station.coordinates
+                            }
+                        }))
+                    },
+                    cluster: true,
+                    clusterMaxZoom: 14,
+                    clusterRadius: 50
+                });
+
+                map.addLayer({
+                    'id': 'clusters',
+                    'type': 'circle',
+                    'source': 'stations',
+                    'filter': ['has', 'point_count'],
+                    'paint': {
+                        'circle-radius': [
+                            'step',
+                            ['get', 'point_count'],
+                            15,
+                            3, 20,
+                            5, 25
+                        ],
+                        'circle-color': '#009FFF'
+                    }
+                });
+
+                map.addLayer({
+                    'id': 'cluster-count',
+                    'type': 'symbol',
+                    'source': 'stations',
+                    'filter': ['has', 'point_count'],
+                    'layout': {
+                        'text-field': '{point_count_abbreviated}',
+                        'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                        'text-size': 14
+                    },
+                    'paint': {
+                        'text-color': '#ffffff'
+                    }
+                });
+
+                map.addLayer({
+                    'id': 'stations-layer',
+                    'type': 'circle',
+                    'source': 'stations',
+                    'filter': ['!', ['has', 'point_count']],
+                    'paint': {
+                        'circle-radius': 12,
+                        'circle-color': '#009FFF'
+                    }
+                });
+
+                map.addLayer({
+                    'id': 'stations-selected',
+                    'type': 'circle',
+                    'source': 'stations',
+                    'filter': ['!', ['has', 'point_count']],
+                    'paint': {
+                        'circle-radius': 20,
+                        'circle-color': '#009FFF',
+                        'circle-stroke-width': 3,
+                        'circle-stroke-color': '#FFFFFF',
+                        'circle-opacity': 0,
+                        'circle-stroke-opacity': 0
+                    }
+                });
+
+                map.addLayer({
+                    'id': 'stations-hover',
+                    'type': 'circle',
+                    'source': 'stations',
+                    'paint': {
+                        'circle-radius': 18,
+                        'circle-color': '#009FFF',
+                        'circle-opacity': 0
+                    },
+                    'filter': ['==', 'index', -1]
+                });
+
+                map.on('click', 'clusters', (e) => {
+                    try {
+                        const features = map.queryRenderedFeatures(e.point, {
+                            layers: ['clusters']
+                        });
+
+                        if (features && features.length > 0 && features[0] && features[0].properties) {
+                            const clusterId = features[0].properties.cluster_id;
+                            const geometry = features[0].geometry;
+                            const coordinates = geometry ? geometry.coordinates : null;
+
+                            if (coordinates && Array.isArray(coordinates) && coordinates.length >= 2) {
+                                map.getSource('stations').getClusterExpansionZoom(
+                                    clusterId,
+                                    (err, zoom) => {
+                                        if (!err) {
+                                            map.easeTo({
+                                                center: coordinates,
+                                                zoom: zoom
+                                            });
+                                        }
+                                    }
+                                );
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error handling cluster click:', error);
+                    }
+                });
+
+                map.on('click', 'stations-layer', (e) => {
+                    try {
+                        const features = map.queryRenderedFeatures(e.point, {
+                            layers: ['stations-layer']
+                        });
+
+                        if (features && features.length > 0 && features[0]) {
+                            const feature = features[0];
+                            const properties = feature.properties || {};
+                            const geometry = feature.geometry || {};
+                            const coordinates = geometry.coordinates;
+
+                            if (!coordinates || !Array.isArray(coordinates) || coordinates.length < 2) {
+                                console.error('Invalid coordinates:', coordinates);
+                                return;
+                            }
+
+                            const lng = parseFloat(coordinates[0]);
+                            const lat = parseFloat(coordinates[1]);
+                            if (isNaN(lng) || isNaN(lat)) {
+                                console.error('Invalid coordinate values:', coordinates);
+                                return;
+                            }
+
+                            const station = {
+                                name: properties.name || 'Unknown Station',
+                                address: properties.address || 'Unknown Address',
+                                available: properties.available || 0,
+                                occupied: properties.occupied || 0,
+                                coordinates: [lng, lat]
+                            };
+
+                            selectedStationIndex = properties.index !== undefined ? properties.index : -1;
+
+                            map.setFilter('stations-selected', ['==', 'index', selectedStationIndex]);
+                            map.setPaintProperty('stations-selected', 'circle-opacity', 1.0);
+                            map.setPaintProperty('stations-selected', 'circle-stroke-opacity', 1);
+
+                            showBottomPopup(station);
+                        }
+                    } catch (error) {
+                        console.error('Error handling station click:', error);
+                    }
+                });
+
+                map.on('mouseenter', 'stations-layer', (e) => {
+                    try {
+                        if (e.features && e.features.length > 0 && e.features[0]) {
+                            const feature = e.features[0];
+                            const properties = feature.properties || {};
+
+                            map.getCanvas().style.cursor = 'pointer';
+                            const index = properties.index || 0;
+
+                            map.setFilter('stations-hover', ['all', ['!', ['has', 'point_count']], ['==', 'index', index]]);
+                            map.setPaintProperty('stations-hover', 'circle-opacity', 1);
+                        }
+                    } catch (error) {
+                        console.error('Error handling station hover:', error);
+                    }
+                });
+
+                map.on('mouseleave', 'stations-layer', (e) => {
+                    map.getCanvas().style.cursor = '';
+                    map.setPaintProperty('stations-hover', 'circle-opacity', 0);
+                });
+
+                map.on('mouseenter', 'clusters', () => {
+                    map.getCanvas().style.cursor = 'pointer';
+                });
+
+                map.on('mouseleave', 'clusters', () => {
+                    map.getCanvas().style.cursor = '';
+                });
+
+                map.addControl(new mapboxgl.NavigationControl());
+                map.addControl(
+                    new mapboxgl.GeolocateControl({
+                        positionOptions: {
+                            enableHighAccuracy: true
+                        },
+                        trackUserLocation: true,
+                        showUserHeading: true
+                    })
+                );
+            });
+        }
+
+        function showBottomPopup(station) {
+            currentStation = station;
+            document.getElementById('popupTitle').textContent = station.name;
+            document.getElementById('popupAddress').textContent = station.address;
+            document.getElementById('availableSlots').textContent = station.available;
+            document.getElementById('occupiedSlots').textContent = station.occupied;
+            document.getElementById('bottomPopup').classList.add('show');
+        }
+
+        function closeBottomPopup() {
+            document.getElementById('bottomPopup').classList.remove('show');
+            currentStation = null;
+
+            selectedStationIndex = -1;
+            if (map) {
+                map.setFilter('stations-selected', ['==', 'index', -1]);
+                map.setPaintProperty('stations-selected', 'circle-opacity', 0);
+                map.setPaintProperty('stations-selected', 'circle-stroke-opacity', 0);
+            }
+        }
+
+        function openDirections() {
+            if (!currentStation) return;
+
+            const lat = currentStation.coordinates[1];
+            const lng = currentStation.coordinates[0];
+
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+            if (/iPad|iPhone|iPod/.test(userAgent)) {
+                window.open(`maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`);
+            } else if (/android/i.test(userAgent)) {
+                window.open(`geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(currentStation.name)})`);
+            } else {
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+            }
+        }
+
+        window.onload = () => {
+            checkPhoneStatus();
+            setInterval(updateElapsedTime, 1000);
+            setInterval(fetchBatteryData, 10000);
+
+            const phoneInput = document.getElementById('phoneInput');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function(e) {
+                    e.target.value = formatPhoneNumber(e.target.value);
+                });
+
+                phoneInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        submitPhoneNumber();
+                    }
+                });
+            }
+        };
+
+        function contactSupport() {
+            const batteryId = currentBatteryId || "Unknown Battery";
+            const message = encodeURIComponent(`The number on my battery is: ${batteryId}`);
+            window.location.href = `sms:7736384996?body=${message}`;
+        }
+
+        async function handleSizlButtonClick() {
+            try {
+                // Get user's phone number and battery ID
+                const batteryId = currentBatteryId;
+                const phoneData = phoneSubmitted ? await getPhoneData(batteryId) : null;
+
+                if (!phoneData || !phoneData.phoneNumber) {
+                    alert('Phone number required. Please refresh and enter your phone number first.');
+                    return;
+                }
+
+                // Send webhook to Sizl with user data
+                const host = window.location.hostname;
+                    const port = window.location.port ? `:${window.location.port}` : '';
+                    const protocol = window.location.protocol;
+                    const response = await fetch(`${protocol}//${host}${port}/api/sizl/webhook`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            batteryId: batteryId,
+                            phoneNumber: phoneData.phoneNumber,
+                            orderId: phoneData.orderId
+                        })
+                    });
+
+                if (webhookResponse.ok) {
+                    // Open Sizl download page
+                    window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');
+                } else {
+                    console.error('Failed to send webhook to Sizl');
+                    // Still open the page even if webhook fails
+                    window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');
+                }
+            } catch (error) {
+                console.error('Error handling Sizl button click:', error);
+                // Fallback to opening the page
+                window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');
+            }
+        }
+
+        async function getPhoneData(batteryId) {
+            try {
+                const response = await fetch(`/api/phone/data/${batteryId}`);
+                if (response.ok) {
+                    return await response.json();
+                }
+                return null;
+            } catch (error) {
+                console.error('Error getting phone data:', error);
+                return null;
+            }
+        }
+
+        function formatPhoneNumber(value) {
+            const phone = value.replace(/\D/g, '');
+            const match = phone.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
+            if (!match) return phone;
+
+            const formatted = `${match[1]}${match[2] ? `-${match[2]}` : ''}${match[3] ? `-${match[3]}` : ''}`;
+            return formatted;
+        }
+
+        async function submitPhoneNumber() {
+            const phoneInput = document.getElementById('phoneInput');
+            const submitBtn = document.getElementById('submitPhoneBtn');
+            const errorDiv = document.getElementById('phoneError');
+            const batteryId = currentBatteryId;
+
+            const phoneNumber = phoneInput.value.replace(/\D/g, '');
+
+            if (phoneNumber.length !== 10) {
+                errorDiv.textContent = 'Please enter a valid 10-digit phone number';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            errorDiv.textContent = '';
+
+            try {
+                const response = await fetch(`/api/phone/${batteryId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ phoneNumber: phoneNumber })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    phoneSubmitted = true;
+                    document.getElementById('phoneForm').style.display = 'none';
+                    document.getElementById('output').style.display = 'block';
+                    document.getElementById('buttons-container').style.display = 'block';
+
+                    if (result.batteryFoundInAPI === false) {
+                        document.getElementById('output').innerHTML = `
+                            <div id="elapsedTimeContainer">
+                                <p style="
+                                    margin: 0px;
+                                    font-size: 30px;
+                                    font-weight: bold;
+                                    color: #FE402E;
+                                    text-align: center;
+                                    padding: 40px 20px;
+                                ">
+                                    Battery ID Not Found
+                                </p>
+                                <p style="
+                                    margin: 0px;
+                                    font-size: 18px;
+                                    color: #CCCCCC;
+                                    text-align: center;
+                                    line-height: 1.5;
+                                ">
+                                    We've saved your phone number, but this battery ID (${batteryId}) was not found in our system. Please contact customer support for assistance.
+                                </p>
+                            </div>
+                        `;
+                    } else {
+                        fetchBatteryData();
+                    }
+                } else {
+                    const error = await response.json();
+                    errorDiv.textContent = error.error || 'Failed to submit phone number';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Continue';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network error. Please try again.';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Continue';
+            }
+        }
+
+        async function checkPhoneStatus() {
+            const batteryId = window.location.pathname.substring(1);
+            currentBatteryId = batteryId;
+
+            if (!batteryId) {
+                phoneSubmitted = true;
+                document.getElementById('output').style.display = 'block';
+                document.getElementById('buttons-container').style.display = 'block';
+                fetchBatteryData();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/phone/${batteryId}`);
+                const data = await response.json();
+
+                if (data.hasPhone) {
+                    phoneSubmitted = true;
+                    document.getElementById('output').style.display = 'block';
+                    document.getElementById('buttons-container').style.display = 'block';
+                    fetchBatteryData();
+                } else {
+                    document.getElementById('phoneForm').style.display = 'flex';
+                }
+            } catch (error) {
+                document.getElementById('phoneForm').style.display = 'flex';
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
+</body>
+</html>

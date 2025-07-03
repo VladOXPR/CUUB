@@ -1,0 +1,687 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Station Locations</title>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #000000;
+            color: #FFFFFF;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background-color: #009FFF;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .back-button:hover {
+            background-color: #007ACC;
+        }
+        
+        .mapboxgl-popup-content {
+            background-color: #1F1F1F;
+            color: #FFFFFF;
+            border-radius: 8px;
+        }
+        
+        .mapboxgl-popup-tip {
+            border-top-color: #1F1F1F;
+        }
+        
+        .station-info {
+            padding: 5px;
+        }
+        
+        .station-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .station-address {
+            font-size: 14px;
+            color: #CCCCCC;
+        }
+
+        .bottom-popup {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #000000;
+            color: #FFFFFF;
+            padding: 20px;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            border-top: 2px solid #333333;
+            z-index: 1001;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-in-out;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+        }
+
+        .bottom-popup.show {
+            transform: translateY(0);
+        }
+
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .popup-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #FFFFFF;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #CCCCCC;
+        }
+
+        .availability-info {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .availability-item {
+            flex: 1;
+        }
+
+        .availability-number {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .available {
+            color: #4CAF50;
+        }
+
+        .occupied {
+            color: #FF6B6B;
+        }
+
+        .availability-label {
+            font-size: 14px;
+            color: #CCCCCC;
+        }
+
+        .directions-btn {
+            width: 100%;
+            background-color: #009FFF;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .directions-btn:hover {
+            background-color: #007ACC;
+        }
+
+        .station-address-popup {
+            font-size: 14px;
+            color: #CCCCCC;
+            margin-bottom: 10px;
+        }
+
+        .rental-status-window {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            color: #FFFFFF;
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            min-width: 200px;
+            border: 1px solid #333333;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .status-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-label {
+            font-size: 14px;
+            color: #CCCCCC;
+            font-weight: normal;
+        }
+
+        .status-value {
+            font-size: 16px;
+            color: #FFFFFF;
+            font-weight: bold;
+        }
+
+        #statusAmount {
+            color: #009FFF;
+        }
+    </style>
+</head>
+<body>
+    <button class="back-button" onclick="window.location.href='/'">Back</button>
+    
+    <!-- Rental Status Window -->
+    <div id="rentalStatus" class="rental-status-window" style="display: none;">
+        <div class="status-content">
+            <div class="status-row">
+                <span class="status-label">Duration:</span>
+                <span id="statusDuration" class="status-value">--:--:--</span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">Paid:</span>
+                <span id="statusAmount" class="status-value">$0.00</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div id="bottomPopup" class="bottom-popup">
+        <div class="popup-header">
+            <div class="popup-title" id="popupTitle">Station Name</div>
+            <button class="close-btn" onclick="closeBottomPopup()">×</button>
+        </div>
+        <div class="station-address-popup" id="popupAddress">Address</div>
+        <div class="availability-info">
+            <div class="availability-item">
+                <div class="availability-number available" id="availableSlots">8</div>
+                <div class="availability-label">Available</div>
+            </div>
+            <div class="availability-item">
+                <div class="availability-number occupied" id="occupiedSlots">4</div>
+                <div class="availability-label">Occupied</div>
+            </div>
+        </div>
+        <button class="directions-btn" onclick="openDirections()">Get Directions</button>
+    </div>
+
+    <script>
+        // Replace this with your actual Mapbox access token from mapbox.com
+        mapboxgl.accessToken = 'pk.eyJ1IjoidmxhZHZhbGNoa291IiwiYSI6ImNtYzlhemFpZTF2MXUya29sNzM4OXhuZjYifQ.jrfH07QPTw_XfnmXXv42Pw';
+
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12', // Default Mapbox theme
+            center: [-87.64, 41.90], // Centered around DePaul locations
+            zoom: 12
+        });
+
+        // DePaul University station locations
+        const stations = [
+            {
+                name: 'DePaul University LP Student Center',
+                address: 'LP Student Center, 1st Floor, Chicago, IL',
+                coordinates: [-87.65415, 41.92335],
+                available: 8,
+                occupied: 4
+            },
+            {
+                name: 'DePaul University Coleman Entrepreneurship Center',
+                address: 'Coleman Entrepreneurship Center, 7th floor, Room 7900, Chicago, IL',
+                coordinates: [-87.62716, 41.87767],
+                available: 12,
+                occupied: 0
+            },
+            {
+                name: 'DePaul University Loop Student Center',
+                address: 'Loop Student Center, 11th Floor, Chicago, IL',
+                coordinates: [-87.62726, 41.87799],
+                available: 3,
+                occupied: 9
+            },
+            {
+                name: 'DePaul University Theater School',
+                address: 'Theater School, 1st Floor, Chicago, IL',
+                coordinates: [-87.65875687443715, 41.92483761368347],
+                available: 6,
+                occupied: 6
+            }
+        ];
+
+        let currentStation = null;
+        let selectedStationIndex = -1;
+        let borrowTime = null;
+        let statusUpdateInterval = null;
+
+        function showBottomPopup(station) {
+            currentStation = station;
+            document.getElementById('popupTitle').textContent = station.name;
+            document.getElementById('popupAddress').textContent = station.address;
+            document.getElementById('availableSlots').textContent = station.available;
+            document.getElementById('occupiedSlots').textContent = station.occupied;
+            document.getElementById('bottomPopup').classList.add('show');
+        }
+
+        function closeBottomPopup() {
+            document.getElementById('bottomPopup').classList.remove('show');
+            currentStation = null;
+            
+            // Clear selected state
+            selectedStationIndex = -1;
+            map.setFilter('stations-selected', ['==', 'index', -1]);
+            map.setPaintProperty('stations-selected', 'circle-opacity', 0);
+            map.setPaintProperty('stations-selected', 'circle-stroke-opacity', 0);
+        }
+
+        function openDirections() {
+            if (!currentStation) return;
+            
+            const lat = currentStation.coordinates[1];
+            const lng = currentStation.coordinates[0];
+            
+            // Check if user is on iOS or Android to open appropriate map app
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            
+            if (/iPad|iPhone|iPod/.test(userAgent)) {
+                // iOS - open Apple Maps
+                window.open(`maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`);
+            } else if (/android/i.test(userAgent)) {
+                // Android - open Google Maps
+                window.open(`geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(currentStation.name)})`);
+            } else {
+                // Fallback to Google Maps web
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+            }
+        }
+
+        // Time conversion and calculation functions
+        function convertChinaToChicagoTime(chinaTimeStr) {
+            if (!chinaTimeStr) return null;
+            try {
+                const date = new Date(chinaTimeStr);
+                return date;
+            } catch (error) {
+                console.error('Error parsing time:', error);
+                return null;
+            }
+        }
+
+        function getTimeElapsed(startTime) {
+            if (!startTime) return "--:--:--";
+            const now = new Date();
+            const diff = now - startTime;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function calculateAmountPaid(startTime) {
+            if (!startTime) return "$0.00";
+            const now = new Date();
+            const hoursElapsed = (now - startTime) / (1000 * 60 * 60);
+            let amount = 0;
+
+            if (hoursElapsed <= 72) {
+                const days = Math.ceil(hoursElapsed / 24);
+                amount = days * 3;
+            } else {
+                amount = 40;
+            }
+
+            return `$${amount.toFixed(2)}`;
+        }
+
+        function updateRentalStatus() {
+            if (borrowTime) {
+                document.getElementById('statusDuration').textContent = getTimeElapsed(borrowTime);
+                document.getElementById('statusAmount').textContent = calculateAmountPaid(borrowTime);
+            }
+        }
+
+        async function checkForActiveBattery() {
+            // Get battery ID from referrer or localStorage
+            const referrer = document.referrer;
+            let batteryId = null;
+            
+            // Try to get battery ID from referrer
+            if (referrer) {
+                try {
+                    const referrerUrl = new URL(referrer);
+                    const pathname = referrerUrl.pathname;
+                    if (pathname && pathname !== '/' && pathname !== '/map.html') {
+                        batteryId = pathname.substring(1);
+                    }
+                } catch (error) {
+                    console.error('Error parsing referrer URL:', error);
+                }
+            }
+            
+            // Also try to get from localStorage as fallback
+            if (!batteryId) {
+                batteryId = localStorage.getItem('currentBatteryId');
+            }
+            
+            if (!batteryId || batteryId === '' || batteryId === 'map.html') {
+                console.log('No active battery found');
+                return; // No active battery
+            }
+
+            try {
+                const host = window.location.hostname;
+                const port = window.location.port ? `:${window.location.port}` : '';
+                const protocol = window.location.protocol;
+                const apiUrl = `${protocol}//${host}${port}/api/battery/${batteryId}`;
+                
+                console.log('Checking battery:', batteryId);
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Battery data:', data);
+                    
+                    // Only show if battery is currently borrowed (no return time)
+                    if (!data.pGhtime && data.pBorrowtime) {
+                        borrowTime = convertChinaToChicagoTime(data.pBorrowtime);
+                        if (borrowTime) {
+                            console.log('Showing rental status for battery:', batteryId);
+                            document.getElementById('rentalStatus').style.display = 'block';
+                            updateRentalStatus();
+                            
+                            // Start updating every second
+                            if (statusUpdateInterval) clearInterval(statusUpdateInterval);
+                            statusUpdateInterval = setInterval(updateRentalStatus, 1000);
+                        }
+                    }
+                } else {
+                    console.log('Battery not found in API:', response.status);
+                }
+            } catch (error) {
+                console.error('Error fetching battery data:', error);
+            }
+        }
+
+        map.on('load', () => {
+            // Add GeoJSON source for stations with clustering enabled
+            map.addSource('stations', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'FeatureCollection',
+                    'features': stations.map((station, index) => ({
+                        'type': 'Feature',
+                        'properties': {
+                            'name': station.name,
+                            'address': station.address,
+                            'available': station.available,
+                            'occupied': station.occupied,
+                            'index': index
+                        },
+                        'geometry': {
+                            'type': 'Point',
+                            'coordinates': station.coordinates
+                        }
+                    }))
+                },
+                cluster: true,
+                clusterMaxZoom: 14,
+                clusterRadius: 50
+            });
+
+            // Add cluster circles
+            map.addLayer({
+                'id': 'clusters',
+                'type': 'circle',
+                'source': 'stations',
+                'filter': ['has', 'point_count'],
+                'paint': {
+                    'circle-radius': [
+                        'step',
+                        ['get', 'point_count'],
+                        15, // radius for 1-2 points
+                        3, 20, // radius for 3+ points
+                        5, 25  // radius for 5+ points
+                    ],
+                    'circle-color': '#009FFF'
+                }
+            });
+
+            // Add cluster count labels
+            map.addLayer({
+                'id': 'cluster-count',
+                'type': 'symbol',
+                'source': 'stations',
+                'filter': ['has', 'point_count'],
+                'layout': {
+                    'text-field': '{point_count_abbreviated}',
+                    'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                    'text-size': 14
+                },
+                'paint': {
+                    'text-color': '#ffffff'
+                }
+            });
+
+            // Add individual station circles (unclustered points)
+            map.addLayer({
+                'id': 'stations-layer',
+                'type': 'circle',
+                'source': 'stations',
+                'filter': ['!', ['has', 'point_count']],
+                'paint': {
+                    'circle-radius': 12,
+                    'circle-color': '#009FFF'
+                }
+            });
+
+            // Add selected effect layer for individual stations (add this BEFORE hover to ensure it's on top)
+            map.addLayer({
+                'id': 'stations-selected',
+                'type': 'circle',
+                'source': 'stations',
+                'filter': ['!', ['has', 'point_count']],
+                'paint': {
+                    'circle-radius': 20,
+                    'circle-color': '#FF6B6B',
+                    'circle-stroke-width': 3,
+                    'circle-stroke-color': '#FFFFFF',
+                    'circle-opacity': 0,
+                    'circle-stroke-opacity': 0
+                }
+            });
+
+            // Add hover effect layer for individual stations
+            map.addLayer({
+                'id': 'stations-hover',
+                'type': 'circle',
+                'source': 'stations',
+                'paint': {
+                    'circle-radius': 18,
+                    'circle-color': '#009FFF',
+                    'circle-opacity': 0
+                },
+                'filter': ['==', 'index', -1]
+            });
+
+            // Click event for clusters - zoom in
+            map.on('click', 'clusters', (e) => {
+                try {
+                    const features = map.queryRenderedFeatures(e.point, {
+                        layers: ['clusters']
+                    });
+                    
+                    if (features && features.length > 0 && features[0] && features[0].properties) {
+                        const clusterId = features[0].properties.cluster_id;
+                        const geometry = features[0].geometry;
+                        const coordinates = geometry ? geometry.coordinates : null;
+                        
+                        if (coordinates && Array.isArray(coordinates) && coordinates.length >= 2) {
+                            map.getSource('stations').getClusterExpansionZoom(
+                                clusterId,
+                                (err, zoom) => {
+                                    if (!err) {
+                                        map.easeTo({
+                                            center: coordinates,
+                                            zoom: zoom
+                                        });
+                                    }
+                                }
+                            );
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error handling cluster click:', error);
+                }
+            });
+
+            // Click event for individual stations
+            map.on('click', 'stations-layer', (e) => {
+                try {
+                    const features = map.queryRenderedFeatures(e.point, {
+                        layers: ['stations-layer']
+                    });
+                    
+                    if (features && features.length > 0 && features[0]) {
+                        const feature = features[0];
+                        const properties = feature.properties || {};
+                        const geometry = feature.geometry || {};
+                        const coordinates = geometry.coordinates;
+                        
+                        // Safety check for coordinates array
+                        if (!coordinates || !Array.isArray(coordinates) || coordinates.length < 2) {
+                            console.error('Invalid coordinates:', coordinates);
+                            return;
+                        }
+                        
+                        // Additional safety checks for coordinate values
+                        const lng = parseFloat(coordinates[0]);
+                        const lat = parseFloat(coordinates[1]);
+                        if (isNaN(lng) || isNaN(lat)) {
+                            console.error('Invalid coordinate values:', coordinates);
+                            return;
+                        }
+                        
+                        const station = {
+                            name: properties.name || 'Unknown Station',
+                            address: properties.address || 'Unknown Address',
+                            available: properties.available || 0,
+                            occupied: properties.occupied || 0,
+                            coordinates: [lng, lat]
+                        };
+                        
+                        // Clear previous selection
+                        selectedStationIndex = properties.index !== undefined ? properties.index : -1;
+                        
+                        // Update selected station with proper filter
+                        map.setFilter('stations-selected', ['==', 'index', selectedStationIndex]);
+                        map.setPaintProperty('stations-selected', 'circle-opacity', 0.8);
+                        map.setPaintProperty('stations-selected', 'circle-stroke-opacity', 1);
+                        
+                        showBottomPopup(station);
+                    }
+                } catch (error) {
+                    console.error('Error handling station click:', error);
+                }
+            });
+
+            // Hover events for individual stations
+            map.on('mouseenter', 'stations-layer', (e) => {
+                try {
+                    if (e.features && e.features.length > 0 && e.features[0]) {
+                        const feature = e.features[0];
+                        const properties = feature.properties || {};
+                        
+                        map.getCanvas().style.cursor = 'pointer';
+                        const index = properties.index || 0;
+                        
+                        // Show hover effect regardless of selection state
+                        map.setFilter('stations-hover', ['all', ['!', ['has', 'point_count']], ['==', 'index', index]]);
+                        map.setPaintProperty('stations-hover', 'circle-opacity', 1);
+                    }
+                } catch (error) {
+                    console.error('Error handling station hover:', error);
+                }
+            });
+
+            map.on('mouseleave', 'stations-layer', (e) => {
+                map.getCanvas().style.cursor = '';
+                
+                // Always hide hover effect on mouse leave
+                map.setPaintProperty('stations-hover', 'circle-opacity', 0);
+            });
+
+            // Hover events for clusters
+            map.on('mouseenter', 'clusters', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            map.on('mouseleave', 'clusters', () => {
+                map.getCanvas().style.cursor = '';
+            });
+
+            // Add navigation controls
+            map.addControl(new mapboxgl.NavigationControl());
+
+            // Add geolocate control
+            map.addControl(
+                new mapboxgl.GeolocateControl({
+                    positionOptions: {
+                        enableHighAccuracy: true
+                    },
+                    trackUserLocation: true,
+                    showUserHeading: true
+                })
+            );
+        });
+
+        // Check for active battery when page loads
+        window.addEventListener('load', () => {
+            checkForActiveBattery();
+        });
+    </script>
+</body>
+</html>

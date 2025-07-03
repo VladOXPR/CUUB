@@ -1,0 +1,79 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 10px; /* Remove extra padding */
+    margin: 0; /* Prevents unwanted shifting */
+    background-color: #171717; /* Dark background */
+    color: #FFFFFF; /* White text for contrast */
+    height: 100vh; /* Full viewport height */
+    overflow: hidden; /* Prevents any scrolling */ /* Centers content horizontally */
+}
+
+
+#output {
+    margin: 20px 0;
+}
+
+.view-locations-btn {
+    display: block; /* Make it take the full width */
+    width: 100%; /* Full width minus 20px margin on each side */
+    margin: 20px auto; /* Center the button and add top margin */
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-color: #172229;
+    border: 1px solid #1D2B34;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+
+.view-locations-btn:hover {
+    background-color: #1D2B34;
+}
+
+#batteryIdDisplay {
+    font-weight: bold;
+    margin-top: 30px;
+    font-weight: bold;
+    font-size: 30px;
+    color: #1F1F1F;
+}
+
+.sms-button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.sms-button:hover {
+    background-color: #0056b3;
+}
+
+#elapsedTime {
+    font-size: 75px; /* Make the text larger */
+    font-weight: bold; /* Make the text bold */
+    color: #FFFFFF; /* Gold color for visibility */; /* Dark background to make it stand out */
+    padding: 5px 10px; /* Add some padding */
+    border-radius: 5px; /* Slightly rounded corners */
+    display: inline-block;
+}
+
+#amountPaid {
+    font-size: 75px; /* Make the text larger */
+    font-family: "Jersey 10", serif;
+    font-weight: 400;
+    font-style: normal; /* Make the text bold */
+    color: #7DDB2A; /* Gold color for visibility */
+    background-color: #000; /* Dark background to make it stand out */
+    padding: 10px; /* Add some padding */
+    border-radius: 10px; /* Slightly rounded corners */
+    display: inline-block; /* Keep it inline but apply styles properly */
+}

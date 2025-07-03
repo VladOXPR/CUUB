@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Numbers Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .download-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+        }
+        .download-btn:hover {
+            background-color: #45a049;
+        }
+        .refresh-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+        }
+        .refresh-btn:hover {
+            background-color: #1976D2;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .no-data {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Phone Numbers Data</h1>
+        
+        <div class="controls">
+            <button class="refresh-btn" onclick="loadData()">Refresh Data</button>
+            <button class="download-btn" onclick="downloadExcel()">Download Excel</button>
+        </div>
+
+        <div id="loading" class="loading">Loading data...</div>
+        
+        <table id="dataTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Battery ID</th>
+                    <th>Phone Number</th>
+                    <th>Order ID</th>
+                    <th>Real Battery ID</th>
+                    <th>Rental Time</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+
+        <div id="noData" class="no-data" style="display: none;">
+            No phone number data found.
+        </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('dataTable');
+            const noData = document.getElementById('noData');
+            const tableBody = document.getElementById('tableBody');
+
+            // Show loading state
+            loading.style.display = 'block';
+            table.style.display = 'none';
+            noData.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/admin/phones');
+                const data = await response.json();
+
+                loading.style.display = 'none';
+
+                if (data.length === 0) {
+                    noData.style.display = 'block';
+                } else {
+                    // Clear existing rows
+                    tableBody.innerHTML = '';
+
+                    // Add data rows
+                    data.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${item.batteryId}</td>
+                            <td>${item.phoneNumber}</td>
+                            <td>${item.orderId}</td>
+                            <td>${item.realBatteryId}</td>
+                            <td>${new Date(item.timestamp).toLocaleString()}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+
+                    table.style.display = 'table';
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                noData.innerHTML = 'Error loading data: ' + error.message;
+                noData.style.display = 'block';
+            }
+        }
+
+        function downloadExcel() {
+            window.location.href = '/api/admin/export-excel';
+        }
+
+        // Load data when page loads
+        window.onload = loadData;
+    </script>
+</body>
+</html>
