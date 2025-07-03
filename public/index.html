@@ -220,7 +220,7 @@
             line-height: 1.5;
         }
 
-        #phoneInput {
+        #phoneInput, #codeInput {
             width: 100%;
             max-width: 280px;
             padding: 12px 16px;
@@ -235,7 +235,7 @@
         }
 
         @media (max-width: 768px) {
-            #phoneInput {
+            #phoneInput, #codeInput {
                 font-size: 16px;
                 padding: 14px 16px;
                 border-radius: 10px;
@@ -243,12 +243,54 @@
             }
         }
 
-        #phoneInput:focus {
+        #phoneInput:focus, #codeInput:focus {
             outline: none;
             border-color: #009FFF;
         }
 
-        #submitPhoneBtn {
+        .code-input-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .code-digit {
+            width: 45px;
+            height: 50px;
+            padding: 0;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            border: 2px solid #262626;
+            border-radius: 8px;
+            background-color: #000000;
+            color: #FFFFFF;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+            .code-digit {
+                width: 40px;
+                height: 45px;
+                font-size: 20px;
+            }
+            
+            .code-input-container {
+                gap: 6px;
+            }
+        }
+
+        .code-digit:focus {
+            outline: none;
+            border-color: #009FFF;
+        }
+
+        .code-digit.filled {
+            border-color: #009FFF;
+        }
+
+        #submitPhoneBtn, #submitCodeBtn, #resendCodeBtn {
             width: 100%;
             max-width: 280px;
             padding: 14px 16px;
@@ -261,10 +303,11 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
             box-sizing: border-box;
+            margin-bottom: 10px;
         }
 
         @media (max-width: 768px) {
-            #submitPhoneBtn {
+            #submitPhoneBtn, #submitCodeBtn, #resendCodeBtn {
                 font-size: 16px;
                 padding: 16px;
                 border-radius: 10px;
@@ -272,13 +315,21 @@
             }
         }
 
-        #submitPhoneBtn:hover {
+        #submitPhoneBtn:hover, #submitCodeBtn:hover {
             background-color: #007ACC;
         }
 
-        #submitPhoneBtn:disabled {
+        #submitPhoneBtn:disabled, #submitCodeBtn:disabled, #resendCodeBtn:disabled {
             background-color: #666666;
             cursor: not-allowed;
+        }
+
+        #resendCodeBtn {
+            background-color: #666666;
+        }
+
+        #resendCodeBtn:hover:not(:disabled) {
+            background-color: #777777;
         }
 
         .error-message {
@@ -569,10 +620,26 @@
 
     <div id="phoneForm" style="display: none;">
         <div class="phone-popup">
-            <h1>Add your phone number to access discount!</h1>
-            <input type="tel" id="phoneInput" placeholder="(555) 123-4567" maxlength="14">
-            <button id="submitPhoneBtn" onclick="submitPhoneNumber()">Continue</button>
-            <div id="phoneError" class="error-message"></div>
+            <div id="phoneStep" style="display: block;">
+                <h1>Add your phone number to access discount!</h1>
+                <input type="tel" id="phoneInput" placeholder="(555) 123-4567" maxlength="14">
+                <button id="submitPhoneBtn" onclick="submitPhoneNumber()">Send Code</button>
+                <div id="phoneError" class="error-message"></div>
+            </div>
+            <div id="codeStep" style="display: none;">
+                <h1>Enter verification code</h1>
+                <p>We sent a 6-digit code to your phone number</p>
+                <div class="code-input-container">
+                    <input type="text" class="code-digit" maxlength="1" data-index="0">
+                    <input type="text" class="code-digit" maxlength="1" data-index="1">
+                    <input type="text" class="code-digit" maxlength="1" data-index="2">
+                    <input type="text" class="code-digit" maxlength="1" data-index="3">
+                    <input type="text" class="code-digit" maxlength="1" data-index="4">
+                    <input type="text" class="code-digit" maxlength="1" data-index="5">
+                </div>
+                <button id="resendCodeBtn" onclick="resendCode()" style="background-color: #666; margin-top: 20px;">Resend Code</button>
+                <div id="codeError" class="error-message"></div>
+            </div>
         </div>
     </div>
 
@@ -677,37 +744,124 @@
         let statusUpdateInterval = null;
         let currentBatteryId = null;
 
-        // DePaul University station locations
-        const stations = [
-            {
-                name: 'DePaul University LP Student Center',
+        // DePaul University station locations with static coordinates and addresses
+        const stationLocations = {
+            'DTN00872': {
                 address: 'LP Student Center, 1st Floor, Chicago, IL',
-                coordinates: [-87.65415, 41.92335],
-                available: 8,
-                occupied: 4
+                coordinates: [-87.65415, 41.92335]
             },
-            {
-                name: 'DePaul University Coleman Entrepreneurship Center',
-                address: 'Coleman Entrepreneurship Center, 7th floor, Room 7900, Chicago, IL',
-                coordinates: [-87.62716, 41.87767],
-                available: 12,
-                occupied: 0
-            },
-            {
-                name: 'DePaul University Loop Student Center',
+            'DTN00971': {
                 address: 'Loop Student Center, 11th Floor, Chicago, IL',
-                coordinates: [-87.62726, 41.87799],
-                available: 3,
-                occupied: 9
+                coordinates: [-87.62726, 41.87799]
             },
-            {
-                name: 'DePaul University Theater School',
+            'DTN00970': {
                 address: 'Theater School, 1st Floor, Chicago, IL',
-                coordinates: [-87.65875687443715, 41.92483761368347],
-                available: 6,
-                occupied: 6
+                coordinates: [-87.65875687443715, 41.92483761368347]
+            },
+            'BJH09881': {
+                address: 'Coleman Entrepreneurship Center, 7th floor, Room 7900, Chicago, IL',
+                coordinates: [-87.62716, 41.87767]
             }
-        ];
+        };
+
+        let stations = [];
+
+        async function fetchStationData() {
+            try {
+                const response = await fetch('/api/stations');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const stationData = await response.json();
+                
+                // Merge with location data
+                stations = stationData.map(station => ({
+                    id: station.id,
+                    name: station.name,
+                    address: stationLocations[station.id]?.address || 'Unknown Address',
+                    coordinates: stationLocations[station.id]?.coordinates || [0, 0],
+                    available: station.available,
+                    occupied: station.occupied,
+                    error: station.error
+                }));
+                
+                console.log('Updated stations data:', stations);
+                
+                // Update map if it exists
+                if (map && map.getSource('stations')) {
+                    updateMapStations();
+                }
+                
+                return stations;
+            } catch (error) {
+                console.error('Error fetching station data:', error);
+                // Fall back to default data if API fails
+                stations = [
+                    {
+                        id: 'DTN00872',
+                        name: 'DePaul University LP Student Center',
+                        address: 'LP Student Center, 1st Floor, Chicago, IL',
+                        coordinates: [-87.65415, 41.92335],
+                        available: 0,
+                        occupied: 0,
+                        error: true
+                    },
+                    {
+                        id: 'DTN00971',
+                        name: 'DePaul University Loop Student Center',
+                        address: 'Loop Student Center, 11th Floor, Chicago, IL',
+                        coordinates: [-87.62726, 41.87799],
+                        available: 0,
+                        occupied: 0,
+                        error: true
+                    },
+                    {
+                        id: 'DTN00970',
+                        name: 'DePaul University Theater School',
+                        address: 'Theater School, 1st Floor, Chicago, IL',
+                        coordinates: [-87.65875687443715, 41.92483761368347],
+                        available: 0,
+                        occupied: 0,
+                        error: true
+                    },
+                    {
+                        id: 'BJH09881',
+                        name: 'DePaul University Coleman Entrepreneurship Center',
+                        address: 'Coleman Entrepreneurship Center, 7th floor, Room 7900, Chicago, IL',
+                        coordinates: [-87.62716, 41.87767],
+                        available: 0,
+                        occupied: 0,
+                        error: true
+                    }
+                ];
+                return stations;
+            }
+        }
+
+        function updateMapStations() {
+            if (!map || !map.getSource('stations')) return;
+            
+            const stationFeatures = stations.map((station, index) => ({
+                'type': 'Feature',
+                'properties': {
+                    'name': station.name,
+                    'address': station.address,
+                    'available': station.available,
+                    'occupied': station.occupied,
+                    'index': index,
+                    'error': station.error
+                },
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': station.coordinates
+                }
+            }));
+
+            map.getSource('stations').setData({
+                'type': 'FeatureCollection',
+                'features': stationFeatures
+            });
+        }
 
         function convertChinaToChicagoTime(chinaTimeStr) {
             return chinaTimeStr ? DateTime.fromISO(chinaTimeStr, { zone: "Asia/Shanghai" }).setZone("America/Chicago") : null;
@@ -953,7 +1107,10 @@
                 center: [-87.64, 41.90],
                 zoom: 12            });
 
-            map.on('load', () => {
+            map.on('load', async () => {
+                // Fetch initial station data
+                await fetchStationData();
+                
                 map.addSource('stations', {
                     'type': 'geojson',
                     'data': {
@@ -965,7 +1122,8 @@
                                 'address': station.address,
                                 'available': station.available,
                                 'occupied': station.occupied,
-                                'index': index
+                                'index': index,
+                                'error': station.error
                             },
                             'geometry': {
                                 'type': 'Point',
@@ -1204,12 +1362,20 @@
             }
         }
 
-        window.onload = () => {
+        window.onload = async () => {
             checkPhoneStatus();
             setInterval(updateElapsedTime, 1000);
             setInterval(fetchBatteryData, 10000);
+            
+            // Fetch station data initially
+            await fetchStationData();
+            
+            // Update station data every 30 seconds
+            setInterval(fetchStationData, 30000);
 
             const phoneInput = document.getElementById('phoneInput');
+            const codeInput = document.getElementById('codeInput');
+            
             if (phoneInput) {
                 phoneInput.addEventListener('input', function(e) {
                     e.target.value = formatPhoneNumber(e.target.value);
@@ -1221,6 +1387,9 @@
                     }
                 });
             }
+
+            // Set up code digit inputs
+            setupCodeDigitInputs();
         };
 
         function contactSupport() {
@@ -1307,16 +1476,136 @@
             }
 
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Submitting...';
+            submitBtn.textContent = 'Sending...';
             errorDiv.textContent = '';
 
             try {
-                const response = await fetch(`/api/phone/${batteryId}`, {
+                const response = await fetch(`/api/phone/${batteryId}/send-code`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ phoneNumber: phoneNumber })
+                });
+
+                if (response.ok) {
+                    // Show verification step
+                    document.getElementById('phoneStep').style.display = 'none';
+                    document.getElementById('codeStep').style.display = 'block';
+                } else {
+                    const error = await response.json();
+                    errorDiv.textContent = error.error || 'Failed to send verification code';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Send Code';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network error. Please try again.';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Code';
+            }
+        }
+
+        function setupCodeDigitInputs() {
+            const codeDigits = document.querySelectorAll('.code-digit');
+            
+            codeDigits.forEach((input, index) => {
+                input.addEventListener('input', function(e) {
+                    // Only allow numbers
+                    e.target.value = e.target.value.replace(/\D/g, '');
+                    
+                    if (e.target.value) {
+                        e.target.classList.add('filled');
+                        // Move to next input
+                        if (index < codeDigits.length - 1) {
+                            codeDigits[index + 1].focus();
+                        }
+                        
+                        // Check if all inputs are filled
+                        checkCodeComplete();
+                    } else {
+                        e.target.classList.remove('filled');
+                    }
+                });
+
+                input.addEventListener('keydown', function(e) {
+                    // Handle backspace
+                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                        codeDigits[index - 1].focus();
+                        codeDigits[index - 1].value = '';
+                        codeDigits[index - 1].classList.remove('filled');
+                    }
+                    
+                    // Handle arrow keys
+                    if (e.key === 'ArrowLeft' && index > 0) {
+                        codeDigits[index - 1].focus();
+                    }
+                    if (e.key === 'ArrowRight' && index < codeDigits.length - 1) {
+                        codeDigits[index + 1].focus();
+                    }
+                });
+
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').substring(0, 6);
+                    
+                    for (let i = 0; i < pastedData.length && i < codeDigits.length; i++) {
+                        codeDigits[i].value = pastedData[i];
+                        codeDigits[i].classList.add('filled');
+                    }
+                    
+                    if (pastedData.length >= 6) {
+                        checkCodeComplete();
+                    }
+                });
+            });
+        }
+
+        function checkCodeComplete() {
+            const codeDigits = document.querySelectorAll('.code-digit');
+            let code = '';
+            
+            codeDigits.forEach(input => {
+                code += input.value;
+            });
+            
+            if (code.length === 6) {
+                submitVerificationCode(code);
+            }
+        }
+
+        async function submitVerificationCode(codeOverride = null) {
+            const errorDiv = document.getElementById('codeError');
+            const batteryId = currentBatteryId;
+            const codeDigits = document.querySelectorAll('.code-digit');
+            const resendBtn = document.getElementById('resendCodeBtn');
+            
+            let code = codeOverride;
+            if (!code) {
+                code = '';
+                codeDigits.forEach(input => {
+                    code += input.value;
+                });
+            }
+
+            if (code.length !== 6) {
+                errorDiv.textContent = 'Please enter all 6 digits';
+                return;
+            }
+
+            // Hide the code input boxes and show verifying state
+            document.querySelector('.code-input-container').style.display = 'none';
+            resendBtn.style.display = 'none';
+            errorDiv.textContent = '';
+            errorDiv.style.color = '#009FFF';
+            errorDiv.textContent = 'Verifying...';
+
+            try {
+                const response = await fetch(`/api/phone/${batteryId}/verify-code`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: code })
                 });
 
                 if (response.ok) {
@@ -1346,7 +1635,7 @@
                                     text-align: center;
                                     line-height: 1.5;
                                 ">
-                                    We've saved your phone number, but this battery ID (${batteryId}) was not found in our system. Please contact customer support for assistance.
+                                    We've verified your phone number, but this battery ID (${batteryId}) was not found in our system. Please contact customer support for assistance.
                                 </p>
                             </div>
                         `;
@@ -1355,15 +1644,75 @@
                     }
                 } else {
                     const error = await response.json();
-                    errorDiv.textContent = error.error || 'Failed to submit phone number';
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Continue';
+                    
+                    // Show error state and resend button
+                    document.querySelector('.code-input-container').style.display = 'flex';
+                    errorDiv.style.color = '#FE402E';
+                    errorDiv.textContent = error.error || 'Failed to verify code';
+                    resendBtn.style.display = 'block';
+                    
+                    // Clear the inputs on error
+                    codeDigits.forEach(input => {
+                        input.value = '';
+                        input.classList.remove('filled');
+                    });
+                    codeDigits[0].focus();
+                }
+            } catch (error) {
+                // Show error state and resend button
+                document.querySelector('.code-input-container').style.display = 'flex';
+                errorDiv.style.color = '#FE402E';
+                errorDiv.textContent = 'Network error. Please try again.';
+                resendBtn.style.display = 'block';
+                
+                // Clear the inputs on error
+                codeDigits.forEach(input => {
+                    input.value = '';
+                    input.classList.remove('filled');
+                });
+                codeDigits[0].focus();
+            }
+        }
+
+        async function resendCode() {
+            const phoneInput = document.getElementById('phoneInput');
+            const resendBtn = document.getElementById('resendCodeBtn');
+            const errorDiv = document.getElementById('codeError');
+            const batteryId = currentBatteryId;
+
+            const phoneNumber = phoneInput.value.replace(/\D/g, '');
+
+            resendBtn.disabled = true;
+            resendBtn.textContent = 'Sending...';
+            errorDiv.textContent = '';
+
+            try {
+                const response = await fetch(`/api/phone/${batteryId}/send-code`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ phoneNumber: phoneNumber })
+                });
+
+                if (response.ok) {
+                    errorDiv.textContent = '';
+                    errorDiv.style.color = '#4CAF50';
+                    errorDiv.textContent = 'Code resent successfully!';
+                    setTimeout(() => {
+                        errorDiv.textContent = '';
+                        errorDiv.style.color = '#FE402E';
+                    }, 3000);
+                } else {
+                    const error = await response.json();
+                    errorDiv.textContent = error.error || 'Failed to resend code';
                 }
             } catch (error) {
                 errorDiv.textContent = 'Network error. Please try again.';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Continue';
             }
+
+            resendBtn.disabled = false;
+            resendBtn.textContent = 'Resend Code';
         }
 
         async function checkPhoneStatus() {

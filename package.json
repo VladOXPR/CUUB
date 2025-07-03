@@ -8,11 +8,13 @@
   },
   "private": true,
   "dependencies": {
+    "compression": "^1.8.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "luxon": "^3.5.0",
     "node-fetch": "^2.7.0",
+    "twilio": "^5.7.1",
     "xlsx": "^0.18.5"
   }
 }

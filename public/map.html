@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,12 +14,12 @@
             background-color: #000000;
             color: #FFFFFF;
         }
-        
+
         #map {
             width: 100%;
             height: 100vh;
         }
-        
+
         .back-button {
             position: absolute;
             top: 20px;
@@ -35,31 +34,31 @@
             font-size: 16px;
             font-weight: bold;
         }
-        
+
         .back-button:hover {
             background-color: #007ACC;
         }
-        
+
         .mapboxgl-popup-content {
             background-color: #1F1F1F;
             color: #FFFFFF;
             border-radius: 8px;
         }
-        
+
         .mapboxgl-popup-tip {
             border-top-color: #1F1F1F;
         }
-        
+
         .station-info {
             padding: 5px;
         }
-        
+
         .station-name {
             font-weight: bold;
             font-size: 16px;
             margin-bottom: 5px;
         }
-        
+
         .station-address {
             font-size: 14px;
             color: #CCCCCC;
@@ -215,7 +214,7 @@
 </head>
 <body>
     <button class="back-button" onclick="window.location.href='/'">Back</button>
-    
+
     <!-- Rental Status Window -->
     <div id="rentalStatus" class="rental-status-window" style="display: none;">
         <div class="status-content">
@@ -229,9 +228,9 @@
             </div>
         </div>
     </div>
-    
+
     <div id="map"></div>
-    
+
     <div id="bottomPopup" class="bottom-popup">
         <div class="popup-header">
             <div class="popup-title" id="popupTitle">Station Name</div>
@@ -311,7 +310,7 @@
         function closeBottomPopup() {
             document.getElementById('bottomPopup').classList.remove('show');
             currentStation = null;
-            
+
             // Clear selected state
             selectedStationIndex = -1;
             map.setFilter('stations-selected', ['==', 'index', -1]);
@@ -321,13 +320,13 @@
 
         function openDirections() {
             if (!currentStation) return;
-            
+
             const lat = currentStation.coordinates[1];
             const lng = currentStation.coordinates[0];
-            
+
             // Check if user is on iOS or Android to open appropriate map app
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            
+
             if (/iPad|iPhone|iPod/.test(userAgent)) {
                 // iOS - open Apple Maps
                 window.open(`maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`);
@@ -389,7 +388,7 @@
             // Get battery ID from referrer or localStorage
             const referrer = document.referrer;
             let batteryId = null;
-            
+
             // Try to get battery ID from referrer
             if (referrer) {
                 try {
@@ -402,12 +401,12 @@
                     console.error('Error parsing referrer URL:', error);
                 }
             }
-            
+
             // Also try to get from localStorage as fallback
             if (!batteryId) {
                 batteryId = localStorage.getItem('currentBatteryId');
             }
-            
+
             if (!batteryId || batteryId === '' || batteryId === 'map.html') {
                 console.log('No active battery found');
                 return; // No active battery
@@ -416,15 +415,14 @@
             try {
                 const host = window.location.hostname;
                 const port = window.location.port ? `:${window.location.port}` : '';
-                const protocol = window.location.protocol;
-                const apiUrl = `${protocol}//${host}${port}/api/battery/${batteryId}`;
-                
+                const apiUrl = `http://${host}${port}/api/battery/${batteryId}`;
+
                 console.log('Checking battery:', batteryId);
                 const response = await fetch(apiUrl);
                 if (response.ok) {
                     const data = await response.json();
                     console.log('Battery data:', data);
-                    
+
                     // Only show if battery is currently borrowed (no return time)
                     if (!data.pGhtime && data.pBorrowtime) {
                         borrowTime = convertChinaToChicagoTime(data.pBorrowtime);
@@ -432,7 +430,7 @@
                             console.log('Showing rental status for battery:', batteryId);
                             document.getElementById('rentalStatus').style.display = 'block';
                             updateRentalStatus();
-                            
+
                             // Start updating every second
                             if (statusUpdateInterval) clearInterval(statusUpdateInterval);
                             statusUpdateInterval = setInterval(updateRentalStatus, 1000);
@@ -553,12 +551,12 @@
                     const features = map.queryRenderedFeatures(e.point, {
                         layers: ['clusters']
                     });
-                    
+
                     if (features && features.length > 0 && features[0] && features[0].properties) {
                         const clusterId = features[0].properties.cluster_id;
                         const geometry = features[0].geometry;
                         const coordinates = geometry ? geometry.coordinates : null;
-                        
+
                         if (coordinates && Array.isArray(coordinates) && coordinates.length >= 2) {
                             map.getSource('stations').getClusterExpansionZoom(
                                 clusterId,
@@ -584,19 +582,19 @@
                     const features = map.queryRenderedFeatures(e.point, {
                         layers: ['stations-layer']
                     });
-                    
+
                     if (features && features.length > 0 && features[0]) {
                         const feature = features[0];
                         const properties = feature.properties || {};
                         const geometry = feature.geometry || {};
                         const coordinates = geometry.coordinates;
-                        
+
                         // Safety check for coordinates array
                         if (!coordinates || !Array.isArray(coordinates) || coordinates.length < 2) {
                             console.error('Invalid coordinates:', coordinates);
                             return;
                         }
-                        
+
                         // Additional safety checks for coordinate values
                         const lng = parseFloat(coordinates[0]);
                         const lat = parseFloat(coordinates[1]);
@@ -604,7 +602,7 @@
                             console.error('Invalid coordinate values:', coordinates);
                             return;
                         }
-                        
+
                         const station = {
                             name: properties.name || 'Unknown Station',
                             address: properties.address || 'Unknown Address',
@@ -612,15 +610,15 @@
                             occupied: properties.occupied || 0,
                             coordinates: [lng, lat]
                         };
-                        
+
                         // Clear previous selection
                         selectedStationIndex = properties.index !== undefined ? properties.index : -1;
-                        
+
                         // Update selected station with proper filter
                         map.setFilter('stations-selected', ['==', 'index', selectedStationIndex]);
                         map.setPaintProperty('stations-selected', 'circle-opacity', 0.8);
                         map.setPaintProperty('stations-selected', 'circle-stroke-opacity', 1);
-                        
+
                         showBottomPopup(station);
                     }
                 } catch (error) {
@@ -634,10 +632,10 @@
                     if (e.features && e.features.length > 0 && e.features[0]) {
                         const feature = e.features[0];
                         const properties = feature.properties || {};
-                        
+
                         map.getCanvas().style.cursor = 'pointer';
                         const index = properties.index || 0;
-                        
+
                         // Show hover effect regardless of selection state
                         map.setFilter('stations-hover', ['all', ['!', ['has', 'point_count']], ['==', 'index', index]]);
                         map.setPaintProperty('stations-hover', 'circle-opacity', 1);
@@ -649,7 +647,7 @@
 
             map.on('mouseleave', 'stations-layer', (e) => {
                 map.getCanvas().style.cursor = '';
-                
+
                 // Always hide hover effect on mouse leave
                 map.setPaintProperty('stations-hover', 'circle-opacity', 0);
             });
@@ -676,11 +674,9 @@
                     showUserHeading: true
                 })
             );
-        });
 
-        // Check for active battery when page loads
-        window.addEventListener('load', () => {
-            checkForActiveBattery();
+            // Update station data every 30 seconds
+            setInterval(fetchStationData, 30000);
         });
     </script>
 </body>
