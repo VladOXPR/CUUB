@@ -1,3 +1,4 @@
+
 require('dotenv').config();
 const express = require('express');
 const fetch = require('node-fetch');
@@ -39,9 +40,13 @@ const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_VERIFY_SERVICE_SID = process.env.TWILIO_VERIFY_SERVICE_SID;
 
+if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_VERIFY_SERVICE_SID) {
+    console.error('Missing Twilio environment variables. Please check your .env file.');
+    process.exit(1);
+}
+
 const twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 console.log('Twilio initialized with Verify service');
-
 
 // In-memory storage for phone numbers (you may want to use a database in production)
 const phoneNumberStorage = new Map();
@@ -49,12 +54,25 @@ const phoneNumberStorage = new Map();
 // In-memory storage for verification codes
 const verificationStorage = new Map();
 
+// API cache
+const apiCache = new Map();
+const CACHE_TTL = 10000; // 10 seconds
+
+const getCachedData = (key) => {
+    const cached = apiCache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.data;
+    }
+    apiCache.delete(key);
+    return null;
+};
+
 app.get('/map.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'map.html'));
+    res.sendFile(path.join(__dirname, 'public/map.html'));
 });
 
 app.get('/:batteryId', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 // Input validation middleware
@@ -86,51 +104,171 @@ const rateLimitMap = new Map();
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
 const MAX_REQUESTS = 3;
 
-const rateLimit = (req, res, next) => {
-    const key = req.ip + req.params.batteryId;
+const checkRateLimit = (identifier) => {
     const now = Date.now();
+    const requests = rateLimitMap.get(identifier) || [];
     
-    if (!rateLimitMap.has(key)) {
-        rateLimitMap.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-        return next();
+    // Remove old requests outside the window
+    const validRequests = requests.filter(time => now - time < RATE_LIMIT_WINDOW);
+    
+    if (validRequests.length >= MAX_REQUESTS) {
+        return false;
     }
     
-    const limit = rateLimitMap.get(key);
-    if (now > limit.resetTime) {
-        rateLimitMap.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-        return next();
-    }
-    
-    if (limit.count >= MAX_REQUESTS) {
-        return res.status(429).json({ error: "Too many requests. Please try again later." });
-    }
-    
-    limit.count++;
-    next();
+    validRequests.push(now);
+    rateLimitMap.set(identifier, validRequests);
+    return true;
 };
 
-// Endpoint to send verification code
-app.post('/api/phone/:batteryId/send-code', 
-    validateBatteryId, 
-    validatePhoneNumber, 
-    rateLimit, 
-    async (req, res) => {
-        const customBatteryId = req.params.batteryId;
-        const { phoneNumber } = req.body;
-        const cleanPhone = req.cleanPhone;
+// Station data endpoint
+app.get('/api/stations', async (req, res) => {
+    const cacheKey = 'stations';
+    const cachedData = getCachedData(cacheKey);
+    
+    if (cachedData) {
+        return res.json(cachedData);
+    }
 
-    // Store verification request (Twilio Verify handles code generation)
-    const verificationRequest = {
-        phoneNumber: cleanPhone,
-        batteryId: customBatteryId,
-        expires: Date.now() + 10 * 60 * 1000, // 10 minutes
-        verified: false
-    };
+    const stationIds = ['DTN00872', 'DTN00971', 'DTN00970', 'BJH09881'];
+    const stationPromises = stationIds.map(async (id) => {
+        try {
+            const response = await fetch(`https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=${id}`, {
+                method: 'GET',
+                headers: {
+                    "Authorization": "Basic VmxhZFZhbGNoa292OlZWMTIxMg==",
+                    "Content-Type": "application/json"
+                },
+                timeout: 10000,
+                redirect: 'follow'
+            });
 
-    verificationStorage.set(customBatteryId, verificationRequest);
+            if (!response.ok) {
+                console.error(`Failed to fetch station ${id}: ${response.status}`);
+                return { id, error: true };
+            }
+
+            const data = await response.json();
+            
+            // Map station names and coordinates
+            const stationInfo = {
+                'DTN00872': { 
+                    name: 'DePaul University LP Student Center', 
+                    coordinates: [-87.65415, 41.92335] 
+                },
+                'DTN00971': { 
+                    name: 'DePaul University Loop Student Center', 
+                    coordinates: [-87.62726, 41.87799] 
+                },
+                'DTN00970': { 
+                    name: 'DePaul University Theater School', 
+                    coordinates: [-87.65875687443715, 41.92483761368347] 
+                },
+                'BJH09881': { 
+                    name: 'DePaul University Coleman Entrepreneurship Center', 
+                    coordinates: [-87.62716, 41.87767] 
+                }
+            };
+
+            return {
+                id,
+                name: stationInfo[id]?.name || `Station ${id}`,
+                coordinates: stationInfo[id]?.coordinates || [0, 0],
+                available: data.data?.cabinet?.emptySlots || 0,
+                occupied: data.data?.cabinet?.busySlots || 0,
+                error: false
+            };
+
+        } catch (error) {
+            console.error(`Error fetching station ${id}:`, error);
+            return { id, error: true };
+        }
+    });
 
     try {
-        const formattedPhone = `+1${cleanPhone}`;
+        const stations = await Promise.all(stationPromises);
+        
+        // Cache the result
+        apiCache.set(cacheKey, {
+            data: stations,
+            timestamp: Date.now()
+        });
+        
+        res.json(stations);
+    } catch (error) {
+        console.error('Error fetching station data:', error);
+        res.status(500).json({ error: 'Failed to fetch station data' });
+    }
+});
+
+// Battery data endpoint
+app.get('/api/battery/:batteryId', validateBatteryId, async (req, res) => {
+    const customBatteryId = req.params.batteryId;
+    const realBatteryId = batteryIdMap[customBatteryId];
+    
+    const cacheKey = `battery_${realBatteryId}`;
+    const cachedData = getCachedData(cacheKey);
+    
+    if (cachedData) {
+        return res.json(cachedData);
+    }
+
+    try {
+        const response = await fetch("https://developer.chargenow.top/cdb-open-api/v1/order/list?page=1&limit=100", {
+            method: 'GET',
+            headers: {
+                "Authorization": "Basic VmxhZFZhbGNoa292OlZWMTIxMg==",
+                "Content-Type": "application/json"
+            },
+            timeout: 10000,
+            redirect: 'follow'
+        });
+
+        if (!response.ok) {
+            throw new Error(`API request failed with status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (!result.page || !result.page.records) {
+            throw new Error("Invalid API response structure");
+        }
+
+        // Find record matching real battery ID
+        const matchingRecord = result.page.records.find(record => record.pBatteryid === realBatteryId);
+        if (matchingRecord) {
+            // Cache the result
+            apiCache.set(cacheKey, {
+                data: matchingRecord,
+                timestamp: Date.now()
+            });
+            res.json(matchingRecord);
+        } else {
+            res.status(404).json({ error: "Battery not found in API data" });
+        }
+    } catch (error) {
+        console.error("Error fetching battery data:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// Phone number collection endpoints
+app.post('/api/phone/:batteryId/send-code', validateBatteryId, validatePhoneNumber, async (req, res) => {
+    const customBatteryId = req.params.batteryId;
+    const phoneNumber = req.cleanPhone;
+    
+    // Check rate limiting
+    if (!checkRateLimit(phoneNumber)) {
+        return res.status(429).json({ error: "Too many verification attempts. Please try again later." });
+    }
+    
+    try {
+        const formattedPhone = `+1${phoneNumber}`;
+        
+        // Store verification data temporarily
+        verificationStorage.set(customBatteryId, {
+            phoneNumber: phoneNumber,
+            expires: Date.now() + 600000 // 10 minutes
+        });
 
         // Use Twilio Verify to send verification code
         const verification = await twilioClient.verify.v2.services(TWILIO_VERIFY_SERVICE_SID)
@@ -171,425 +309,101 @@ app.post('/api/phone/:batteryId/verify-code', async (req, res) => {
 
     try {
         const formattedPhone = `+1${verificationData.phoneNumber}`;
-
-        // Use Twilio Verify to check the verification code
-        const verification_check = await twilioClient.verify.v2.services(TWILIO_VERIFY_SERVICE_SID)
+        
+        // Use Twilio Verify to check verification code
+        const verificationCheck = await twilioClient.verify.v2.services(TWILIO_VERIFY_SERVICE_SID)
             .verificationChecks
             .create({to: formattedPhone, code: code});
 
-        if (verification_check.status !== 'approved') {
-            return res.status(400).json({ error: "Invalid verification code" });
+        if (verificationCheck.status === 'approved') {
+            // Store the phone number data
+            const realBatteryId = batteryIdMap[customBatteryId];
+            
+            phoneNumberStorage.set(customBatteryId, {
+                batteryId: customBatteryId,
+                phoneNumber: verificationData.phoneNumber,
+                realBatteryId: realBatteryId,
+                orderId: `ORDER_${Date.now()}`,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Clean up verification storage
+            verificationStorage.delete(customBatteryId);
+            
+            console.log(`Phone verification successful for battery ${customBatteryId}, phone: ${verificationData.phoneNumber}`);
+            
+            res.json({ 
+                success: true, 
+                message: "Phone number verified and registered successfully"
+            });
+        } else {
+            res.status(400).json({ error: "Invalid verification code" });
         }
-
-        console.log(`Verification approved for ${formattedPhone}, battery ${customBatteryId}`);
     } catch (error) {
         console.error('Error verifying code:', error);
-        return res.status(400).json({ error: "Invalid verification code" });
-    }
-
-    // Translate custom ID to real ID
-    const realBatteryId = batteryIdMap[customBatteryId];
-    if (!realBatteryId) {
-        return res.status(404).json({ error: "Battery ID not found" });
-    }
-
-    try {
-        // Get the order details from the API
-        const myHeaders = {
-            "Authorization": "Basic VmxhZFZhbGNoa292OlZWMTIxMg==",
-            "Content-Type": "application/json"
-        };
-
-        const requestOptions = {
-            method: 'GET',
-            headers: myHeaders,
-            credentials: 'include',
-            redirect: 'follow'
-        };
-
-        const response = await fetch("https://developer.chargenow.top/cdb-open-api/v1/order/list?page=1&limit=100", requestOptions);
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const result = await response.json();
-
-        if (!result.page || !result.page.records) {
-            throw new Error("Invalid API response structure");
-        }
-
-        // Find record matching real battery ID
-        const matchingRecord = result.page.records.find(record => record.pBatteryid === realBatteryId);
-
-        // Store verified phone number
-        const phoneData = {
-            phoneNumber: verificationData.phoneNumber,
-            orderId: matchingRecord ? (matchingRecord.id || matchingRecord.pOrderid) : 'Not Found',
-            batteryId: customBatteryId,
-            realBatteryId: realBatteryId,
-            timestamp: new Date().toISOString(),
-            batteryFoundInAPI: !!matchingRecord,
-            verified: true
-        };
-
-        phoneNumberStorage.set(customBatteryId, phoneData);
-
-        // Mark verification as complete
-        verificationData.verified = true;
-        verificationStorage.set(customBatteryId, verificationData);
-
-        console.log(`Phone number verified: ${verificationData.phoneNumber} for battery ${customBatteryId}, order ${phoneData.orderId}, found in API: ${!!matchingRecord}`);
-
-        res.json({ 
-            success: true, 
-            message: "Phone number verified successfully",
-            batteryFoundInAPI: !!matchingRecord
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Failed to verify code" });
     }
 });
 
-// Endpoint to check if phone number is already submitted
-app.get('/api/phone/:batteryId', (req, res) => {
+// Check if phone number exists for battery
+app.get('/api/phone/:batteryId', validateBatteryId, (req, res) => {
     const customBatteryId = req.params.batteryId;
     const phoneData = phoneNumberStorage.get(customBatteryId);
-
-    res.json({ hasPhone: !!phoneData });
-});
-
-// Simple in-memory cache
-const apiCache = new Map();
-const CACHE_TTL = 10000; // 10 seconds
-
-const getCachedData = (key) => {
-    const cached = apiCache.get(key);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        return cached.data;
-    }
-    apiCache.delete(key);
-    return null;
-};
-
-const setCachedData = (key, data) => {
-    apiCache.set(key, { data, timestamp: Date.now() });
-};
-
-// Optimized battery data endpoint with caching
-app.get('/api/battery/:batteryId', validateBatteryId, async (req, res) => {
-    const customBatteryId = req.params.batteryId;
-    const realBatteryId = batteryIdMap[customBatteryId];
     
-    // Check cache first
-    const cacheKey = `battery_data_${realBatteryId}`;
-    const cachedData = getCachedData(cacheKey);
-    if (cachedData) {
-        return res.json(cachedData);
-    }
-
-    const myHeaders = {
-        "Authorization": "Basic VmxhZFZhbGNoa292OlZWMTIxMg==",
-        "Content-Type": "application/json"
-    };
-
-    const requestOptions = {
-        method: 'GET',
-        headers: myHeaders,
-        timeout: 10000, // 10 second timeout
-        redirect: 'follow'
-    };
-
-    try {
-        const response = await fetch("https://developer.chargenow.top/cdb-open-api/v1/order/list?page=1&limit=100", requestOptions);
-        if (!response.ok) {
-            throw new Error(`API request failed with status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-
-        if (!result.page || !result.page.records) {
-            throw new Error("Invalid API response structure");
-        }
-
-        // Find record matching real battery ID
-        const matchingRecord = result.page.records.find(record => record.pBatteryid === realBatteryId);
-        if (matchingRecord) {
-            setCachedData(cacheKey, matchingRecord);
-            res.json(matchingRecord);
-        } else {
-            res.status(404).json({ error: "Battery not found in API data" });
-        }
-    } catch (error) {
-        console.error(`Battery API error for ${customBatteryId}:`, error.message);
-        res.status(500).json({ error: "Failed to fetch battery data" });
-    }
-});
-
-// In-memory storage for Sizl webhook tracking
-const sizlWebhookStorage = new Map();
-
-// Debug endpoint to view collected phone numbers (remove in production)
-app.get('/api/admin/phones', (req, res) => {
-    const phones = Array.from(phoneNumberStorage.entries()).map(([batteryId, data]) => ({
-        batteryId,
-        ...data
-    }));
-    res.json(phones);
-});
-
-// Endpoint to get phone data for a specific battery ID
-app.get('/api/phone/data/:batteryId', (req, res) => {
-    const batteryId = req.params.batteryId;
-    const phoneData = phoneNumberStorage.get(batteryId);
-
     if (phoneData) {
-        res.json(phoneData);
-    } else {
-        res.status(404).json({ error: 'Phone data not found' });
-    }
-});
-
-// Webhook endpoint to send user data to Sizl
-app.post('/api/sizl/webhook', async (req, res) => {
-    const { batteryId, phoneNumber, orderId } = req.body;
-
-    if (!batteryId || !phoneNumber) {
-        return res.status(400).json({ error: 'Battery ID and phone number are required' });
-    }
-
-    try {
-        // Store the webhook request for tracking
-        const webhookData = {
-            batteryId,
-            phoneNumber,
-            orderId,
-            timestamp: new Date().toISOString(),
-            status: 'sent',
-            refunded: false
-        };
-
-        sizlWebhookStorage.set(batteryId, webhookData);
-
-        // TODO: Replace this URL with the actual Sizl webhook endpoint
-        const sizlWebhookUrl = 'https://api.sizl.com/webhook/user-registration'; // Replace with actual URL
-
-        // Send webhook to Sizl (uncomment when you have the real endpoint)
-        /*
-        const sizlResponse = await fetch(sizlWebhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer YOUR_SIZL_API_KEY' // Add your Sizl API key
-            },
-            body: JSON.stringify({
-                rentId: orderId,
-                phoneNumber: phoneNumber,
-                batteryId: batteryId,
-                callbackUrl: `${req.protocol}://${req.get('host')}/api/sizl/confirmation`
-            })
+        res.json({ 
+            hasPhone: true, 
+            phoneNumber: phoneData.phoneNumber,
+            orderId: phoneData.orderId 
         });
-
-        if (!sizlResponse.ok) {
-            throw new Error(`Sizl webhook failed: ${sizlResponse.status}`);
-        }
-        */
-
-        console.log(`Sizl webhook sent for battery ${batteryId}, phone ${phoneNumber}, order ${orderId}`);
-        res.json({ success: true, message: 'Webhook sent to Sizl' });
-
-    } catch (error) {
-        console.error('Error sending webhook to Sizl:', error);
-        res.status(500).json({ error: 'Failed to send webhook to Sizl' });
+    } else {
+        res.json({ hasPhone: false });
     }
 });
 
-// Endpoint to receive confirmation from Sizl when user completes registration
-app.post('/api/sizl/confirmation', async (req, res) => {
-    const { rentId, phoneNumber, batteryId, status, userId } = req.body;
-
-    console.log('Received Sizl confirmation:', { rentId, phoneNumber, batteryId, status, userId });
-
-    if (status === 'completed' || status === 'registered') {
-        // Find the corresponding webhook data
-        const webhookData = sizlWebhookStorage.get(batteryId);
-
-        if (webhookData && !webhookData.refunded) {
-            // Mark as completed and trigger refund process
-            webhookData.status = 'completed';
-            webhookData.refunded = true;
-            webhookData.completedTimestamp = new Date().toISOString();
-            webhookData.sizlUserId = userId;
-
-            sizlWebhookStorage.set(batteryId, webhookData);
-
-            // Trigger automatic refund
-            try {
-                await processAutomaticRefund(batteryId, webhookData);
-                console.log(`Automatic refund processed for battery ${batteryId}`);
-            } catch (error) {
-                console.error(`Failed to process automatic refund for battery ${batteryId}:`, error);
-            }
-        }
-    }
-
-    res.json({ success: true, message: 'Confirmation received' });
+// Admin endpoints
+app.get('/api/admin/phones', (req, res) => {
+    const phoneData = Array.from(phoneNumberStorage.values());
+    res.json(phoneData);
 });
 
-// Function to process automatic refund
-async function processAutomaticRefund(batteryId, webhookData) {
-    // TODO: Integrate with your payment system to issue refund
-    // This is where you would call your payment processor's refund API
-
-    console.log(`Processing $3.00 refund for:`, {
-        batteryId: batteryId,
-        phoneNumber: webhookData.phoneNumber,
-        orderId: webhookData.orderId,
-        rentId: webhookData.orderId
-    });
-
-    // Example of what the refund call might look like:
-    /*
-    const refundResponse = await fetch('https://api.your-payment-processor.com/refunds', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer YOUR_PAYMENT_API_KEY'
-        },
-        body: JSON.stringify({
-            orderId: webhookData.orderId,
-            amount: 3.00,
-            reason: 'Sizl app registration completed'
-        })
-    });
-
-    if (!refundResponse.ok) {
-        throw new Error(`Refund failed: ${refundResponse.status}`);
-    }
-    */
-
-    // You could also send an email notification to the user
-    // or update your database with the refund status
-
-    return true;
-}
-
-// Admin endpoint to view Sizl webhook status
-app.get('/api/admin/sizl-webhooks', (req, res) => {
-    const webhooks = Array.from(sizlWebhookStorage.entries()).map(([batteryId, data]) => ({
-        batteryId,
-        ...data
-    }));
-    res.json(webhooks);
-});
-
-// Station data endpoint
-app.get('/api/stations', async (req, res) => {
-    const stations = [
-        { id: 'DTN00872', name: 'DePaul University LP Student Center' },
-        { id: 'DTN00971', name: 'DePaul University Loop Student Center' },
-        { id: 'DTN00970', name: 'DePaul University Theater School' },
-        { id: 'BJH09881', name: 'DePaul University Coleman Entrepreneurship Center' }
-    ];
-
-    const myHeaders = {
-        "Authorization": "Basic VmxhZFZhbGNoa292OlZWMTIxMg==",
-        "Content-Type": "application/json"
-    };
-
-    const requestOptions = {
-        method: 'GET',
-        headers: myHeaders,
-        credentials: 'include',
-        redirect: 'follow'
-    };
-
-    try {
-        const stationData = await Promise.all(stations.map(async (station) => {
-            try {
-                const response = await fetch(`https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=${station.id}`, requestOptions);
-                if (!response.ok) {
-                    console.error(`Failed to fetch data for station ${station.id}: ${response.status}`);
-                    return {
-                        id: station.id,
-                        name: station.name,
-                        available: 0,
-                        occupied: 0,
-                        error: true
-                    };
-                }
-
-                const data = await response.json();
-                console.log(`Station ${station.id} data:`, data);
-
-                // Get available and occupied slots from cabinet data
-                let available = 0;
-                let occupied = 0;
-
-                if (data.data && data.data.cabinet) {
-                    available = data.data.cabinet.emptySlots || 0;
-                    occupied = data.data.cabinet.busySlots || 0;
-                }
-
-                return {
-                    id: station.id,
-                    name: station.name,
-                    available: available,
-                    occupied: occupied,
-                    error: false
-                };
-            } catch (error) {
-                console.error(`Error fetching data for station ${station.id}:`, error);
-                return {
-                    id: station.id,
-                    name: station.name,
-                    available: 0,
-                    occupied: 0,
-                    error: true
-                };
-            }
-        }));
-
-        res.json(stationData);
-    } catch (error) {
-        console.error('Error fetching station data:', error);
-        res.status(500).json({ error: 'Failed to fetch station data' });
-    }
-});
-
-// Excel export endpoint
 app.get('/api/admin/export-excel', (req, res) => {
     try {
-        // Convert stored data to Excel format
-        const excelData = Array.from(phoneNumberStorage.entries()).map(([batteryId, data]) => ({
-            'Battery ID': batteryId,
-            'Phone Number': data.phoneNumber,
-            'Order ID': data.orderId,
-            'Real Battery ID': data.realBatteryId,
-            'Rental Time': data.timestamp
-        }));
+        const phoneData = Array.from(phoneNumberStorage.values());
+        
+        if (phoneData.length === 0) {
+            return res.status(404).json({ error: 'No data to export' });
+        }
 
-        // Create workbook and worksheet
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-        // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Phone Numbers');
-
-        // Generate Excel file buffer
-        const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-
+        // Create a new workbook
+        const wb = XLSX.utils.book_new();
+        
+        // Convert data to worksheet
+        const ws = XLSX.utils.json_to_sheet(phoneData);
+        
+        // Add the worksheet to the workbook
+        XLSX.utils.book_append_sheet(wb, ws, 'Phone Numbers');
+        
+        // Generate buffer
+        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+        
         // Set headers for file download
         res.setHeader('Content-Disposition', 'attachment; filename=phone_numbers.xlsx');
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-
-        // Send the Excel file
-        res.send(excelBuffer);
+        
+        res.send(buffer);
     } catch (error) {
         console.error('Error generating Excel file:', error);
         res.status(500).json({ error: 'Failed to generate Excel file' });
     }
 });
 
-// Request logging middleware (development only)
+// Admin page
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/admin.html'));
+});
+
+// Logging middleware for development
 if (process.env.NODE_ENV !== 'production') {
     app.use((req, res, next) => {
         console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);

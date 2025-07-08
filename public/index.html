@@ -121,7 +121,7 @@
             background-color: #FE402E;
             border-radius: 20px;
             padding: 20px;
-            border: 1px solid #FF776B;
+            border: 1px solid #262626;
             text-align: left;
             flex: 1;
             cursor: pointer;
@@ -275,7 +275,7 @@
                 height: 45px;
                 font-size: 20px;
             }
-            
+
             .code-input-container {
                 gap: 6px;
             }
@@ -432,17 +432,16 @@
 
         .bottom-popup {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
             background-color: #000000;
             color: #FFFFFF;
             padding: 20px;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            border-top: 2px solid #333333;
+            border-radius: 20px;
+            border: 2px solid #333333;
             z-index: 10002;
-            transform: translateY(100%);
+            transform: translateY(calc(100% + 50px));
             transition: transform 0.3s ease-in-out;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
         }
@@ -453,14 +452,36 @@
 
         .popup-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
             margin-bottom: 15px;
         }
 
+        .popup-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 50px;
+        }
+
+        .popup-left {
+            flex: 1;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .popup-right {
+            flex: 1;
+            display: flex;
+            justify-content: flex-end;
+            align-items: stretch;
+        }
+
         .popup-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
+            color: #FFFFFF;
+            text-align: left;
         }
 
         .close-btn {
@@ -479,6 +500,54 @@
 
         .close-btn:hover {
             color: #CCCCCC;
+        }
+
+        .availability-info-new {
+            display: flex;
+            justify-content: space-between;
+            text-align: center;
+            gap: 40px;
+        }
+
+        .availability-item-new {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .availability-icon-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .availability-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .blue-dot {
+            background-color: #009FFF;
+        }
+
+        .gray-dot {
+            background-color: #808080;
+        }
+
+        .availability-number-new {
+            font-size: 18px;
+            font-weight: bold;
+            color: #FFFFFF;
+        }
+
+        .availability-label-new {
+            font-size: 14px;
+            color: #CCCCCC;
+            font-weight: normal;
+            white-space: nowrap;
         }
 
         .availability-info {
@@ -600,18 +669,28 @@
 
         <div id="bottomPopup" class="bottom-popup">
             <div class="popup-header">
-                <div class="popup-title" id="popupTitle">Station Name</div>
-                <button class="close-btn" onclick="closeBottomPopup()">×</button>
             </div>
-            <div class="station-address-popup" id="popupAddress">Address</div>
-            <div class="availability-info">
-                <div class="availability-item">
-                    <div class="availability-number available" id="availableSlots">8</div>
-                    <div class="availability-label">Available</div>
+            <div class="popup-content">
+                <div class="popup-left">
+                    <div class="popup-title" id="popupTitle">Station Name</div>
                 </div>
-                <div class="availability-item">
-                    <div class="availability-number occupied" id="occupiedSlots">4</div>
-                    <div class="availability-label">Occupied</div>
+                <div class="popup-right">
+                    <div class="availability-info-new">
+                        <div class="availability-item-new">
+                            <div class="availability-icon-container">
+                                <div class="availability-icon blue-dot"></div>
+                                <div class="availability-number-new" id="availableSlots">5</div>
+                            </div>
+                            <div class="availability-label-new">To Take</div>
+                        </div>
+                        <div class="availability-item-new">
+                            <div class="availability-icon-container">
+                                <div class="availability-icon gray-dot"></div>
+                                <div class="availability-number-new" id="occupiedSlots">8</div>
+                            </div>
+                            <div class="availability-label-new">To Return</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <button class="directions-btn" onclick="openDirections()">Get Directions</button>
@@ -628,14 +707,12 @@
             </div>
             <div id="codeStep" style="display: none;">
                 <h1>Enter verification code</h1>
-                <p>We sent a 6-digit code to your phone number</p>
+                <p>We sent a 4-digit code to your phone number</p>
                 <div class="code-input-container">
                     <input type="text" class="code-digit" maxlength="1" data-index="0">
                     <input type="text" class="code-digit" maxlength="1" data-index="1">
                     <input type="text" class="code-digit" maxlength="1" data-index="2">
                     <input type="text" class="code-digit" maxlength="1" data-index="3">
-                    <input type="text" class="code-digit" maxlength="1" data-index="4">
-                    <input type="text" class="code-digit" maxlength="1" data-index="5">
                 </div>
                 <button id="resendCodeBtn" onclick="resendCode()" style="background-color: #666; margin-top: 20px;">Resend Code</button>
                 <div id="codeError" class="error-message"></div>
@@ -773,25 +850,25 @@
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
                 const stationData = await response.json();
-                
+
                 // Merge with location data
                 stations = stationData.map(station => ({
                     id: station.id,
                     name: station.name,
-                    address: stationLocations[station.id]?.address || 'Unknown Address',
+                    address: station.address,
                     coordinates: stationLocations[station.id]?.coordinates || [0, 0],
                     available: station.available,
                     occupied: station.occupied,
                     error: station.error
                 }));
-                
+
                 console.log('Updated stations data:', stations);
-                
+
                 // Update map if it exists
                 if (map && map.getSource('stations')) {
                     updateMapStations();
                 }
-                
+
                 return stations;
             } catch (error) {
                 console.error('Error fetching station data:', error);
@@ -840,7 +917,7 @@
 
         function updateMapStations() {
             if (!map || !map.getSource('stations')) return;
-            
+
             const stationFeatures = stations.map((station, index) => ({
                 'type': 'Feature',
                 'properties': {
@@ -905,7 +982,7 @@
         }
 
         function showRentalStatus() {
-            // Only show rental status window when map is visible
+            // Only show rental status window when map isvisible
             if (borrowTime && document.getElementById('mapContainer').style.display === 'block') {
                 document.getElementById('rentalStatus').style.display = 'block';
                 document.getElementById('statusDuration').textContent = getTimeElapsed(borrowTime);
@@ -1110,7 +1187,7 @@
             map.on('load', async () => {
                 // Fetch initial station data
                 await fetchStationData();
-                
+
                 map.addSource('stations', {
                     'type': 'geojson',
                     'data': {
@@ -1321,13 +1398,25 @@
                         showUserHeading: true
                     })
                 );
+
+                // Close popup when clicking on empty map areas
+                map.on('click', (e) => {
+                    // Check if the click was on a station or cluster
+                    const features = map.queryRenderedFeatures(e.point, {
+                        layers: ['stations-layer', 'clusters']
+                    });
+
+                    // If no features were clicked, close the popup
+                    if (!features || features.length === 0) {
+                        closeBottomPopup();
+                    }
+                });
             });
         }
 
         function showBottomPopup(station) {
             currentStation = station;
             document.getElementById('popupTitle').textContent = station.name;
-            document.getElementById('popupAddress').textContent = station.address;
             document.getElementById('availableSlots').textContent = station.available;
             document.getElementById('occupiedSlots').textContent = station.occupied;
             document.getElementById('bottomPopup').classList.add('show');
@@ -1366,16 +1455,16 @@
             checkPhoneStatus();
             setInterval(updateElapsedTime, 1000);
             setInterval(fetchBatteryData, 10000);
-            
+
             // Fetch station data initially
             await fetchStationData();
-            
+
             // Update station data every 30 seconds
             setInterval(fetchStationData, 30000);
 
             const phoneInput = document.getElementById('phoneInput');
             const codeInput = document.getElementById('codeInput');
-            
+
             if (phoneInput) {
                 phoneInput.addEventListener('input', function(e) {
                     e.target.value = formatPhoneNumber(e.target.value);
@@ -1507,19 +1596,19 @@
 
         function setupCodeDigitInputs() {
             const codeDigits = document.querySelectorAll('.code-digit');
-            
+
             codeDigits.forEach((input, index) => {
                 input.addEventListener('input', function(e) {
                     // Only allow numbers
                     e.target.value = e.target.value.replace(/\D/g, '');
-                    
+
                     if (e.target.value) {
                         e.target.classList.add('filled');
                         // Move to next input
                         if (index < codeDigits.length - 1) {
                             codeDigits[index + 1].focus();
                         }
-                        
+
                         // Check if all inputs are filled
                         checkCodeComplete();
                     } else {
@@ -1534,7 +1623,7 @@
                         codeDigits[index - 1].value = '';
                         codeDigits[index - 1].classList.remove('filled');
                     }
-                    
+
                     // Handle arrow keys
                     if (e.key === 'ArrowLeft' && index > 0) {
                         codeDigits[index - 1].focus();
@@ -1546,14 +1635,14 @@
 
                 input.addEventListener('paste', function(e) {
                     e.preventDefault();
-                    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').substring(0, 6);
-                    
+                    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').substring(0, 4);
+
                     for (let i = 0; i < pastedData.length && i < codeDigits.length; i++) {
                         codeDigits[i].value = pastedData[i];
                         codeDigits[i].classList.add('filled');
                     }
-                    
-                    if (pastedData.length >= 6) {
+
+                    if (pastedData.length >= 4) {
                         checkCodeComplete();
                     }
                 });
@@ -1563,12 +1652,12 @@
         function checkCodeComplete() {
             const codeDigits = document.querySelectorAll('.code-digit');
             let code = '';
-            
+
             codeDigits.forEach(input => {
                 code += input.value;
             });
-            
-            if (code.length === 6) {
+
+            if (code.length === 4) {
                 submitVerificationCode(code);
             }
         }
@@ -1578,7 +1667,7 @@
             const batteryId = currentBatteryId;
             const codeDigits = document.querySelectorAll('.code-digit');
             const resendBtn = document.getElementById('resendCodeBtn');
-            
+
             let code = codeOverride;
             if (!code) {
                 code = '';
@@ -1587,8 +1676,8 @@
                 });
             }
 
-            if (code.length !== 6) {
-                errorDiv.textContent = 'Please enter all 6 digits';
+            if (code.length !== 4) {
+                errorDiv.textContent = 'Please enter all 4 digits';
                 return;
             }
 
@@ -1611,46 +1700,26 @@
                 if (response.ok) {
                     const result = await response.json();
                     phoneSubmitted = true;
+                    
+                    // Store verification in localStorage
+                    const localStorageKey = `phone_verified_${batteryId}`;
+                    localStorage.setItem(localStorageKey, 'true');
+                    
                     document.getElementById('phoneForm').style.display = 'none';
                     document.getElementById('output').style.display = 'block';
                     document.getElementById('buttons-container').style.display = 'block';
 
-                    if (result.batteryFoundInAPI === false) {
-                        document.getElementById('output').innerHTML = `
-                            <div id="elapsedTimeContainer">
-                                <p style="
-                                    margin: 0px;
-                                    font-size: 30px;
-                                    font-weight: bold;
-                                    color: #FE402E;
-                                    text-align: center;
-                                    padding: 40px 20px;
-                                ">
-                                    Battery ID Not Found
-                                </p>
-                                <p style="
-                                    margin: 0px;
-                                    font-size: 18px;
-                                    color: #CCCCCC;
-                                    text-align: center;
-                                    line-height: 1.5;
-                                ">
-                                    We've verified your phone number, but this battery ID (${batteryId}) was not found in our system. Please contact customer support for assistance.
-                                </p>
-                            </div>
-                        `;
-                    } else {
-                        fetchBatteryData();
-                    }
+                    // Fetch and display battery data immediately
+                    fetchBatteryData();
                 } else {
                     const error = await response.json();
-                    
+
                     // Show error state and resend button
                     document.querySelector('.code-input-container').style.display = 'flex';
                     errorDiv.style.color = '#FE402E';
                     errorDiv.textContent = error.error || 'Failed to verify code';
                     resendBtn.style.display = 'block';
-                    
+
                     // Clear the inputs on error
                     codeDigits.forEach(input => {
                         input.value = '';
@@ -1664,7 +1733,7 @@
                 errorDiv.style.color = '#FE402E';
                 errorDiv.textContent = 'Network error. Please try again.';
                 resendBtn.style.display = 'block';
-                
+
                 // Clear the inputs on error
                 codeDigits.forEach(input => {
                     input.value = '';
@@ -1727,12 +1796,40 @@
                 return;
             }
 
+            // Check localStorage first
+            const localStorageKey = `phone_verified_${batteryId}`;
+            const localVerified = localStorage.getItem(localStorageKey);
+            
+            if (localVerified === 'true') {
+                // Check with server to make sure the phone number still exists
+                try {
+                    const response = await fetch(`/api/phone/${batteryId}`);
+                    const data = await response.json();
+
+                    if (data.hasPhone) {
+                        phoneSubmitted = true;
+                        document.getElementById('output').style.display = 'block';
+                        document.getElementById('buttons-container').style.display = 'block';
+                        fetchBatteryData();
+                        return;
+                    } else {
+                        // Remove from localStorage if server doesn't have the phone number
+                        localStorage.removeItem(localStorageKey);
+                    }
+                } catch (error) {
+                    console.error('Error checking server phone status:', error);
+                }
+            }
+
+            // If not in localStorage or server doesn't have it, check server anyway
             try {
                 const response = await fetch(`/api/phone/${batteryId}`);
                 const data = await response.json();
 
                 if (data.hasPhone) {
                     phoneSubmitted = true;
+                    // Store in localStorage for future visits
+                    localStorage.setItem(localStorageKey, 'true');
                     document.getElementById('output').style.display = 'block';
                     document.getElementById('buttons-container').style.display = 'block';
                     fetchBatteryData();

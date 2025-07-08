@@ -66,17 +66,16 @@
 
         .bottom-popup {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
             background-color: #000000;
             color: #FFFFFF;
             padding: 20px;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            border-top: 2px solid #333333;
+            border-radius: 20px;
+            border: 2px solid #333333;
             z-index: 1001;
-            transform: translateY(100%);
+            transform: translateY(calc(100% + 50px));
             transition: transform 0.3s ease-in-out;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
         }
@@ -87,14 +86,36 @@
 
         .popup-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
             margin-bottom: 15px;
         }
 
+        .popup-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 50px;
+        }
+
+        .popup-left {
+            flex: 1;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .popup-right {
+            flex: 1;
+            display: flex;
+            justify-content: flex-end;
+            align-items: stretch;
+        }
+
         .popup-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
+            color: #FFFFFF;
+            text-align: left;
         }
 
         .close-btn {
@@ -113,6 +134,54 @@
 
         .close-btn:hover {
             color: #CCCCCC;
+        }
+
+        .availability-info-new {
+            display: flex;
+            justify-content: space-between;
+            text-align: center;
+            gap: 40px;
+        }
+
+        .availability-item-new {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .availability-icon-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .availability-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .blue-dot {
+            background-color: #009FFF;
+        }
+
+        .gray-dot {
+            background-color: #808080;
+        }
+
+        .availability-number-new {
+            font-size: 18px;
+            font-weight: bold;
+            color: #FFFFFF;
+        }
+
+        .availability-label-new {
+            font-size: 14px;
+            color: #CCCCCC;
+            font-weight: normal;
+            white-space: nowrap;
         }
 
         .availability-info {
@@ -233,18 +302,28 @@
 
     <div id="bottomPopup" class="bottom-popup">
         <div class="popup-header">
-            <div class="popup-title" id="popupTitle">Station Name</div>
-            <button class="close-btn" onclick="closeBottomPopup()">×</button>
         </div>
-        <div class="station-address-popup" id="popupAddress">Address</div>
-        <div class="availability-info">
-            <div class="availability-item">
-                <div class="availability-number available" id="availableSlots">8</div>
-                <div class="availability-label">Available</div>
+        <div class="popup-content">
+            <div class="popup-left">
+                <div class="popup-title" id="popupTitle">Station Name</div>
             </div>
-            <div class="availability-item">
-                <div class="availability-number occupied" id="occupiedSlots">4</div>
-                <div class="availability-label">Occupied</div>
+            <div class="popup-right">
+                <div class="availability-info-new">
+                    <div class="availability-item-new">
+                        <div class="availability-icon-container">
+                            <div class="availability-icon blue-dot"></div>
+                            <div class="availability-number-new" id="availableSlots">5</div>
+                        </div>
+                        <div class="availability-label-new">To Take</div>
+                    </div>
+                    <div class="availability-item-new">
+                        <div class="availability-icon-container">
+                            <div class="availability-icon gray-dot"></div>
+                            <div class="availability-number-new" id="occupiedSlots">8</div>
+                        </div>
+                        <div class="availability-label-new">To Return</div>
+                    </div>
+                </div>
             </div>
         </div>
         <button class="directions-btn" onclick="openDirections()">Get Directions</button>
@@ -301,7 +380,6 @@
         function showBottomPopup(station) {
             currentStation = station;
             document.getElementById('popupTitle').textContent = station.name;
-            document.getElementById('popupAddress').textContent = station.address;
             document.getElementById('availableSlots').textContent = station.available;
             document.getElementById('occupiedSlots').textContent = station.occupied;
             document.getElementById('bottomPopup').classList.add('show');
@@ -511,8 +589,26 @@
                 'source': 'stations',
                 'filter': ['!', ['has', 'point_count']],
                 'paint': {
-                    'circle-radius': 12,
-                    'circle-color': '#009FFF'
+                    'circle-radius': 22,
+                    'circle-color': '#808080',
+                    'circle-stroke-width': 0
+                }
+            });
+
+            // Add lightning bolt symbols on top of circles
+            map.addLayer({
+                'id': 'stations-symbols',
+                'type': 'symbol',
+                'source': 'stations',
+                'filter': ['!', ['has', 'point_count']],
+                'layout': {
+                    'text-field': '⚡',
+                    'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                    'text-size': 18,
+                    'text-anchor': 'center'
+                },
+                'paint': {
+                    'text-color': '#0066FF'
                 }
             });
 
@@ -523,9 +619,9 @@
                 'source': 'stations',
                 'filter': ['!', ['has', 'point_count']],
                 'paint': {
-                    'circle-radius': 20,
+                    'circle-radius': 30,
                     'circle-color': '#FF6B6B',
-                    'circle-stroke-width': 3,
+                    'circle-stroke-width': 4,
                     'circle-stroke-color': '#FFFFFF',
                     'circle-opacity': 0,
                     'circle-stroke-opacity': 0
@@ -538,9 +634,11 @@
                 'type': 'circle',
                 'source': 'stations',
                 'paint': {
-                    'circle-radius': 18,
-                    'circle-color': '#009FFF',
-                    'circle-opacity': 0
+                    'circle-radius': 25,
+                    'circle-color': '#A0A0A0',
+                    'circle-stroke-width': 0,
+                    'circle-opacity': 0,
+                    'circle-stroke-opacity': 0
                 },
                 'filter': ['==', 'index', -1]
             });
@@ -573,6 +671,56 @@
                     }
                 } catch (error) {
                     console.error('Error handling cluster click:', error);
+                }
+            });
+
+            // Click event for lightning bolt symbols
+            map.on('click', 'stations-symbols', (e) => {
+                try {
+                    const features = map.queryRenderedFeatures(e.point, {
+                        layers: ['stations-symbols']
+                    });
+
+                    if (features && features.length > 0 && features[0]) {
+                        const feature = features[0];
+                        const properties = feature.properties || {};
+                        const geometry = feature.geometry || {};
+                        const coordinates = geometry.coordinates;
+
+                        // Safety check for coordinates array
+                        if (!coordinates || !Array.isArray(coordinates) || coordinates.length < 2) {
+                            console.error('Invalid coordinates:', coordinates);
+                            return;
+                        }
+
+                        // Additional safety checks for coordinate values
+                        const lng = parseFloat(coordinates[0]);
+                        const lat = parseFloat(coordinates[1]);
+                        if (isNaN(lng) || isNaN(lat)) {
+                            console.error('Invalid coordinate values:', coordinates);
+                            return;
+                        }
+
+                        const station = {
+                            name: properties.name || 'Unknown Station',
+                            address: properties.address || 'Unknown Address',
+                            available: properties.available || 0,
+                            occupied: properties.occupied || 0,
+                            coordinates: [lng, lat]
+                        };
+
+                        // Clear previous selection
+                        selectedStationIndex = properties.index !== undefined ? properties.index : -1;
+
+                        // Update selected station with proper filter
+                        map.setFilter('stations-selected', ['==', 'index', selectedStationIndex]);
+                        map.setPaintProperty('stations-selected', 'circle-opacity', 0.8);
+                        map.setPaintProperty('stations-selected', 'circle-stroke-opacity', 1);
+
+                        showBottomPopup(station);
+                    }
+                } catch (error) {
+                    console.error('Error handling station click:', error);
                 }
             });
 
@@ -638,7 +786,8 @@
 
                         // Show hover effect regardless of selection state
                         map.setFilter('stations-hover', ['all', ['!', ['has', 'point_count']], ['==', 'index', index]]);
-                        map.setPaintProperty('stations-hover', 'circle-opacity', 1);
+                        map.setPaintProperty('stations-hover', 'circle-opacity', 0.8);
+                        map.setPaintProperty('stations-hover', 'circle-stroke-opacity', 1);
                     }
                 } catch (error) {
                     console.error('Error handling station hover:', error);
@@ -650,6 +799,16 @@
 
                 // Always hide hover effect on mouse leave
                 map.setPaintProperty('stations-hover', 'circle-opacity', 0);
+                map.setPaintProperty('stations-hover', 'circle-stroke-opacity', 0);
+            });
+
+            // Also add hover events for the lightning bolt symbols
+            map.on('mouseenter', 'stations-symbols', (e) => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            map.on('mouseleave', 'stations-symbols', (e) => {
+                map.getCanvas().style.cursor = '';
             });
 
             // Hover events for clusters
@@ -675,9 +834,61 @@
                 })
             );
 
+            // Initial fetch of station data
+            fetchStationData();
+
             // Update station data every 30 seconds
             setInterval(fetchStationData, 30000);
+
+            // Add a click event to the map to close the popup when clicking outside a pin
+            map.on('click', (e) => {
+                const features = map.queryRenderedFeatures(e.point, {
+                    layers: ['stations-layer', 'stations-symbols']
+                });
+
+                if (!features.length) {
+                    closeBottomPopup();
+                }
+            });
         });
+
+        // Function to fetch station data from API
+        async function fetchStationData() {
+            try {
+                const response = await fetch('/api/stations');
+                const data = await response.json();
+
+                console.log('Updated stations data:', data);
+
+                // Update the map source with new data
+                const features = data.map((station, index) => ({
+                    'type': 'Feature',
+                    'properties': {
+                        'name': station.name,
+                        'address': station.address,
+                        'available': station.available,
+                        'occupied': station.occupied,
+                        'index': index
+                    },
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': station.coordinates
+                    }
+                }));
+
+                map.getSource('stations').setData({
+                    'type': 'FeatureCollection',
+                    'features': features
+                });
+
+                // Update the stations array for popup functionality
+                stations.length = 0;
+                stations.push(...data);
+
+            } catch (error) {
+                console.error('Error fetching station data:', error);
+            }
+        }
     </script>
 </body>
 </html>
