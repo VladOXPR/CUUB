@@ -1,8 +1,17 @@
+@font-face {
+    font-family: 'TT Hoves';
+    src: url('../attached_assets/TT Hoves Pro Trial Regular_1752094251003.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'TT Hoves', Arial, sans-serif;
+    font-weight: 400;
+    max-width: 430px;
+    margin: 0 auto;
     text-align: center;
     padding: 10px; /* Remove extra padding */
-    margin: 0; /* Prevents unwanted shifting */
     background-color: #171717; /* Dark background */
     color: #FFFFFF; /* White text for contrast */
     height: 100vh; /* Full viewport height */
