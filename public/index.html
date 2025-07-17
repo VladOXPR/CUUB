@@ -17,7 +17,7 @@
             padding: 10px 20px;
             background-color: #000000;
             color: #FFFFFF;
-            height: 75vh;
+            height: 100vh;
             overflow: hidden;
             box-sizing: border-box;
         }
@@ -1869,7 +1869,20 @@
                 const result = await response.json();
                 phoneSubmitted = true;
 
-                // Store verification in localStorage
+                // Get phone number from input
+                const phoneInput = document.getElementById('phoneInput');
+                const phoneNumber = phoneInput.value.replace(/\D/g, '');
+
+                // Store both global and battery-specific verification in localStorage
+                const userData = {
+                    hasVerifiedPhone: true,
+                    lastVerifiedBattery: batteryId,
+                    lastLoginDate: new Date().toISOString(),
+                    phoneNumber: phoneNumber,
+                    totalBatteriesUsed: (JSON.parse(localStorage.getItem('cuub_user_data') || '{}').totalBatteriesUsed || 0) + 1
+                };
+                localStorage.setItem('cuub_user_data', JSON.stringify(userData));
+
                 const localStorageKey = `phone_verified_${batteryId}`;
                 localStorage.setItem(localStorageKey, 'true');
 
@@ -1982,49 +1995,108 @@
             return;
         }
 
-        // Check localStorage first
-        const localStorageKey = `phone_verified_${batteryId}`;
-        const localVerified = localStorage.getItem(localStorageKey);
+        // Enhanced localStorage check - look for global user data and battery-specific data
+        const globalUserData = localStorage.getItem('cuub_user_data');
+        const batterySpecificKey = `phone_verified_${batteryId}`;
+        const batterySpecificVerified = localStorage.getItem(batterySpecificKey);
 
-        if (localVerified === 'true') {
-            // Check with server to make sure the phone number still exists
+        // Check if user has previously verified their phone number
+        if (globalUserData || batterySpecificVerified === 'true') {
             try {
+                // Check with server to make sure the phone number still exists for this battery
                 const response = await fetch(`/api/phone/${batteryId}`);
                 const data = await response.json();
 
                 if (data.hasPhone) {
                     phoneSubmitted = true;
+
+                    // Store both global and battery-specific verification
+                    if (globalUserData) {
+                        const userData = JSON.parse(globalUserData);
+                        userData.lastVerifiedBattery = batteryId;
+                        userData.lastLoginDate = new Date().toISOString();
+                        localStorage.setItem('cuub_user_data', JSON.stringify(userData));
+                    } else {
+                        // Create global user data from battery-specific verification
+                        const newUserData = {
+                            hasVerifiedPhone: true,
+                            lastVerifiedBattery: batteryId,
+                            lastLoginDate: new Date().toISOString(),
+                            phoneNumber: data.phoneNumber || null
+                        };
+                        localStorage.setItem('cuub_user_data', JSON.stringify(newUserData));
+                    }
+
+                    localStorage.setItem(batterySpecificKey, 'true');
                     document.getElementById('output').style.display = 'block';
                     document.getElementById('buttons-container').style.display = 'block';
                     fetchBatteryData();
                     return;
                 } else {
-                    // Remove from localStorage if server doesn't have the phone number
-                    localStorage.removeItem(localStorageKey);
+                    // Remove verification for this specific battery if server doesn't have it
+                    localStorage.removeItem(batterySpecificKey);
                 }
             } catch (error) {
                 console.error('Error checking server phone status:', error);
             }
         }
 
-        // If not in localStorage or server doesn't have it, check server anyway
+        // If no cached verification, check server
         try {
             const response = await fetch(`/api/phone/${batteryId}`);
             const data = await response.json();
 
             if (data.hasPhone) {
                 phoneSubmitted = true;
-                // Store in localStorage for future visits
-                localStorage.setItem(localStorageKey, 'true');
+
+                // Store verification data in localStorage
+                const userData = {
+                    hasVerifiedPhone: true,
+                    lastVerifiedBattery: batteryId,
+                    lastLoginDate: new Date().toISOString(),
+                    phoneNumber: data.phoneNumber || null
+                };
+                localStorage.setItem('cuub_user_data', JSON.stringify(userData));
+                localStorage.setItem(batterySpecificKey, 'true');
+
                 document.getElementById('output').style.display = 'block';
                 document.getElementById('buttons-container').style.display = 'block';
                 fetchBatteryData();
             } else {
-                document.getElementById('phoneForm').style.display = 'flex';
+                // Show phone form with welcome back message if user has used the service before
+                const globalUserData = localStorage.getItem('cuub_user_data');
+                if (globalUserData) {
+                    showPhoneFormWithWelcomeBack();
+                } else {
+                    document.getElementById('phoneForm').style.display = 'flex';
+                }
             }
         } catch (error) {
             document.getElementById('phoneForm').style.display = 'flex';
         }
+    }
+
+    function showPhoneFormWithWelcomeBack() {
+        const globalUserData = JSON.parse(localStorage.getItem('cuub_user_data'));
+        const phonePopup = document.querySelector('.phone-popup h1');
+        const phonePopupDescription = document.querySelector('.phone-popup p');
+
+        if (phonePopup && globalUserData) {
+            phonePopup.textContent = 'Welcome back!';
+            if (phonePopupDescription) {
+                phonePopupDescription.textContent = 'Enter your phone number to continue with this battery.';
+            }
+
+            // Pre-fill phone number if we have it
+            if (globalUserData.phoneNumber) {
+                const phoneInput = document.getElementById('phoneInput');
+                if (phoneInput) {
+                    phoneInput.value = formatPhoneNumber(globalUserData.phoneNumber);
+                }
+            }
+        }
+
+        document.getElementById('phoneForm').style.display = 'flex';
     }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
