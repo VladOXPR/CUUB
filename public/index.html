@@ -115,6 +115,7 @@
             text-align: left;
             flex: 1;
             box-sizing: border-box;
+            height: auto;
         }
 
         #newContainer {
@@ -749,15 +750,95 @@
             max-width: 400px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
             margin: 0 auto;
         ">
+        <!-- Battery ID Input -->
+        <div style="
+                background-color: #000000;
+                border-radius: 20px;
+                padding: 20px;
+                margin-bottom: 16px;
+            ">
+            <div style="
+                    font-size: 13px;
+                    color: #FFFFFF;
+                    margin: 40px 0 40px 0;
+                    text-align: center;
+                    line-height: 1.3;
+                ">Insert the 4 digit number to see<br>duration and amount paid</div>
+            <div class="battery-id-input-container" style="
+                    display: flex;
+                    justify-content: center;
+                    gap: 8px;
+                    margin-bottom: 15px;
+                ">
+                <input type="text" class="battery-id-digit" maxlength="1" data-index="0" style="
+                        width: 45px;
+                        height: 50px;
+                        padding: 0;
+                        font-size: 24px;
+                        font-weight: bold;
+                        text-align: center;
+                        border: 1px solid #FFFFFF;
+                        border-radius: 8px;
+                        background-color: #000000;
+                        color: #FFFFFF;
+                        box-sizing: border-box;
+                        text-transform: uppercase;
+                    ">
+                <input type="text" class="battery-id-digit" maxlength="1" data-index="1" style="
+                        width: 45px;
+                        height: 50px;
+                        padding: 0;
+                        font-size: 24px;
+                        font-weight: bold;
+                        text-align: center;
+                        border: 1px solid #FFFFFF;
+                        border-radius: 8px;
+                        background-color: #000000;
+                        color: #FFFFFF;
+                        box-sizing: border-box;
+                        text-transform: uppercase;
+                    ">
+                <input type="text" class="battery-id-digit" maxlength="1" data-index="2" style="
+                        width: 45px;
+                        height: 50px;
+                        padding: 0;
+                        font-size: 24px;
+                        font-weight: bold;
+                        text-align: center;
+                        border: 1px solid #FFFFFF;
+                        border-radius: 8px;
+                        background-color: #000000;
+                        color: #FFFFFF;
+                        box-sizing: border-box;
+                        text-transform: uppercase;
+                    ">
+                <input type="text" class="battery-id-digit" maxlength="1" data-index="3" style="
+                        width: 45px;
+                        height: 50px;
+                        padding: 0;
+                        font-size: 24px;
+                        font-weight: bold;
+                        text-align: center;
+                        border: 1px solid #FFFFFF;
+                        border-radius: 8px;
+                        background-color: #000000;
+                        color: #FFFFFF;
+                        box-sizing: border-box;
+                        text-transform: uppercase;
+                    ">
+            </div>
+        </div>
+
         <!-- Website Link -->
         <a href="https://cuub.tech" target="_blank" style="
                 background-color: #000000;
                 border: 1px solid #35383C;
                 border-radius: 20px;
                 padding: 20px;
+                margin: 8px 5px 0px;
                 cursor: pointer;
                 transition: background-color 0.3s ease;
                 text-decoration: none;
@@ -777,112 +858,84 @@
                 ">Learn more about our services at cuub.tech</div>
         </a>
 
-        <!-- Customer Support -->
-        <div style="
-                background-color: #1C1E20;
-                border: 1px solid #35383C;
-                border-radius: 20px;
-                padding: 20px;
-                cursor: pointer;
-                transition: background-color 0.3s ease;
-                text-decoration: none;
-                color: inherit;
-                display: block;
-            " onclick="contactSupport()" onmouseover="this.style.backgroundColor='#2A2C2E'" onmouseout="this.style.backgroundColor='#1C1E20'">
-            <div style="
-                    font-size: 25px;
-                    font-weight: bold;
-                    margin: 0 0 10px 0;
-                ">Customer Support</div>
-            <div style="
-                    font-size: 13px;
-                    color: #B0D2FF;
-                    margin: 0;
-                    line-height: 1.3;
-                ">Tap for questions, complaints, and refunds!</div>
-        </div>
 
-        <!-- Find Locations -->
-        <div style="
-                background-color: #0099FF;
-                border: 1px solid #3789BC;
-                border-radius: 20px;
-                padding: 20px;
-                cursor: pointer;
-                transition: background-color 0.3s ease;
-                text-decoration: none;
-                color: inherit;
-                display: block;
-            " onclick="window.location.href='/map.html'" onmouseover="this.style.backgroundColor='#007ACC'" onmouseout="this.style.backgroundColor='#0099FF'">
-            <div style="
-                    font-size: 25px;
-                    font-weight: bold;
-                    margin: 0 0 10px 0;
-                ">Find Locations</div>
-            <div style="
-                    font-size: 13px;
-                    color: #FFFFFF;
-                    opacity: 0.8;
-                    margin: 0;
-                    line-height: 1.3;
-                ">Locate battery rental stations near you</div>
-        </div>
+
+
     </div>
 </div>
 
 <div id="output" style="display: none;">
-    <div id="elapsedTimeContainer">
-        <p style="
-                margin: 0px;
-                font-size: 13px;
-                font-weight: bold;
-                color: #CCCCCC;
-            ">
-            Rent Duration
-        </p>
-        <p id="elapsedTime">Loading...</p>
+    <div id="loadingMessage" style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 13px;
+            font-weight: normal;
+            color: #B0D2FF;
+            text-align: center;
+            margin-top: -100px;
+        ">
+        <span id="loadingText"></span>
     </div>
-
-    <div class="containers-wrapper">
-        <div id="amountPaidContainer">
+    
+    <div id="batteryContent" style="display: none;">
+        <div id="elapsedTimeContainer">
             <p style="
                     margin: 0px;
-                    font-size: 20px;
-                    font-family: Arial, sans-serif;
+                    font-size: 13px;
                     font-weight: bold;
-                    font-style: normal;
                     color: #CCCCCC;
-                    width: fit-content;
                 ">
-                Paid
+                Rent Duration
             </p>
-            <p id="amountPaid">Loading...</p>
+            <p id="elapsedTime">Loading...</p>
         </div>
 
-        <div id="newContainer" onclick="handleSizlButtonClick()">
-            <div style="
-                    font-size: 25px;
-                    font-family: Arial, sans-serif;
-                    font-weight: bold;
-                    color: #FFFFFF;
-                    margin: 0px;
-                ">
-                $3 OFF
-            </div>
-            <div style="
-                    font-size: 13px;
-                    font-family: Arial, sans-serif;
-                    color: #FFFFFF;
-                    margin-top: 10px;
-                    line-height: 1.3;
-                ">
-                Download and register the sizl app to get money back
+        <div class="containers-wrapper">
+            <div id="amountPaidContainer">
+                <p style="
+                        margin: 0px;
+                        font-size: 20px;
+                        font-family: Arial, sans-serif;
+                        font-weight: bold;
+                        font-style: normal;
+                        color: #CCCCCC;
+                        width: fit-content;
+                    ">
+                    Paid
+                </p>
+                <p id="amountPaid">Loading...</p>
             </div>
         </div>
     </div>
 </div>
 
 <div id="buttons-container" style="display: none;">
+
+</div>
+
+<!-- Global Customer Support Button - will be dynamically positioned -->
+<div id="globalSupportBtn" style="display: none;">
+    <button class="support-btn" onclick="contactSupport()">
+        <div style="
+                font-size: 25px;
+                font-weight: bold;
+            ">
+            Customer Support
+        </div>
+        <div id="supportSubtext" style="
+                font-size: 13px;
+                color: #B0D2FF;
+                margin-top: 10px;
+            ">
+            <span class="typewriter-text typing-animation"></span>
+        </div>
+    </button>
+</div>
+
+<!-- Global Map Button - will be dynamically positioned -->
+<div id="globalMapBtn" style="display: none;">
     <button class="view-locations-btn" onclick="showMap()">
         <div style="
                 font-size: 25px;
@@ -898,22 +951,6 @@
                 height: 15px;
             ">
             &nbsp;
-        </div>
-    </button>
-
-    <button class="support-btn" onclick="contactSupport()">
-        <div style="
-                font-size: 25px;
-                font-weight: bold;
-            ">
-            Customer Support
-        </div>
-        <div id="supportSubtext" style="
-                font-size: 13px;
-                color: #B0D2FF;
-                margin-top: 10px;
-            ">
-            <span class="typewriter-text typing-animation"></span>
         </div>
     </button>
 </div>
@@ -1136,62 +1173,107 @@
 
         currentBatteryId = batteryId;
         const outputDiv = document.getElementById("output");
+        const loadingMessage = document.getElementById("loadingMessage");
+        const batteryContent = document.getElementById("batteryContent");
+
+        // Show loading message first and hide global buttons
+        if (loadingMessage && batteryContent) {
+            loadingMessage.style.display = 'flex';
+            batteryContent.style.display = 'none';
+            // Hide global buttons during loading
+            const globalSupportBtn = document.getElementById('globalSupportBtn');
+            const globalMapBtn = document.getElementById('globalMapBtn');
+            if (globalSupportBtn) globalSupportBtn.style.display = 'none';
+            if (globalMapBtn) globalMapBtn.style.display = 'none';
+            typeLoadingMessage();
+        }
 
         if (!batteryId) {
             const randomMinutes = Math.floor(Math.random() * 60) + 1;
             borrowTime = DateTime.now().minus({ minutes: randomMinutes });
 
-            outputDiv.innerHTML = `
-                <div id="elapsedTimeContainer">
-                    <p style="
-                        margin: 0px;
-                        font-size: 13px;
+            // Only show newContainer if we're on the /demo route
+            const isDemoRoute = path === '/demo';
+            const newContainerHTML = isDemoRoute ? `
+                <div id="newContainer" onclick="window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');">
+                    <div style="
+                        font-size: 20px;
+                        font-family: Arial, sans-serif;
                         font-weight: bold;
-                        color: #CCCCCC;
+                        color: #FFFFFF;
+                        margin: 0px;
                     ">
-                        Rent Duration
-                    </p>
-                    <p id="elapsedTime">${getTimeElapsed(borrowTime)}</p>
+                        $3 OFF
+                    </div>
+                    <div style="
+                        font-size: 13px;
+                        font-family: Arial, sans-serif;
+                        color: #FFFFFF;
+                        margin-top: 10px;
+                        line-height: 1.3;
+                    ">
+                        Download and register<br>
+                        the sizl app to get<br>
+                        money back
+                    </div>
+                    <div class="sizl-text"><i>s</i>izl</div>
                 </div>
+            ` : '';
 
-                <div class="containers-wrapper">
-                    <div id="amountPaidContainer">
+            // Hide loading message and show battery content
+            if (loadingMessage && batteryContent) {
+                loadingMessage.style.display = 'none';
+                batteryContent.style.display = 'block';
+            }
+            
+            // Show global buttons after content is loaded
+            showGlobalSupportButton();
+            showGlobalMapButton();
+
+            outputDiv.innerHTML = `
+                <div id="loadingMessage" style="
+                        display: none;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                        font-size: 13px;
+                        font-weight: normal;
+                        color: #B0D2FF;
+                        text-align: center;
+                        margin-top: -100px;
+                    ">
+                    <span id="loadingText"></span>
+                </div>
+                
+                <div id="batteryContent" style="display: block;">
+                    <div id="elapsedTimeContainer">
                         <p style="
                             margin: 0px;
-                            font-size: 20px;
-                            font-family: Arial, sans-serif;
+                            font-size: 13px;
                             font-weight: bold;
-                            font-style: normal;
                             color: #CCCCCC;
-                            width: fit-content;
                         ">
-                            Paid
+                            Rent Duration
                         </p>
-                        <p id="amountPaid" style="font-family: Arial, sans-serif; font-weight: bold; font-size: 50px;">$3.00</p>
+                        <p id="elapsedTime">${getTimeElapsed(borrowTime)}</p>
                     </div>
 
-                    <div id="newContainer" onclick="window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');">
-                        <div style="
-                            font-size: 20px;
-                            font-family: Arial, sans-serif;
-                            font-weight: bold;
-                            color: #FFFFFF;
-                            margin: 0px;
-                        ">
-                            $3 OFF
+                    <div class="containers-wrapper">
+                        <div id="amountPaidContainer">
+                            <p style="
+                                margin: 0px;
+                                font-size: 20px;
+                                font-family: Arial, sans-serif;
+                                font-weight: bold;
+                                font-style: normal;
+                                color: #CCCCCC;
+                                width: fit-content;
+                            ">
+                                Paid
+                            </p>
+                            <p id="amountPaid" style="font-family: Arial, sans-serif; font-weight: bold; font-size: 50px;">$3.00</p>
                         </div>
-                        <div style="
-                            font-size: 13px;
-                            font-family: Arial, sans-serif;
-                            color: #FFFFFF;
-                            margin-top: 10px;
-                            line-height: 1.3;
-                        ">
-                            Download and register<br>
-                            the sizl app to get<br>
-                            money back
-                        </div>
-                        <div class="sizl-text"><i>s</i>izl</div>
+                        ${newContainerHTML}
                     </div>
                 </div>
             `;
@@ -1209,6 +1291,17 @@
             if (!response.ok) throw new Error("Battery not found");
 
             const data = await response.json();
+            
+            // Hide loading message and show battery content
+            if (loadingMessage && batteryContent) {
+                loadingMessage.style.display = 'none';
+                batteryContent.style.display = 'block';
+            }
+            
+            // Show global buttons after content is loaded
+            showGlobalSupportButton();
+            showGlobalMapButton();
+            
             outputDiv.innerHTML = "";
 
             if (data.pGhtime) {
@@ -1219,9 +1312,9 @@
                     <div id="elapsedTimeContainer">
                         <p style="
                             margin: 0px;
-                            font-size: 50px;
+                            font-size: 25px;
                             font-weight: bold;
-                            color: #CCCCCC;
+                            color: #FFFFFF;
                         ">
                             Battery Returned
                         </p>
@@ -1587,27 +1680,81 @@
         }
     }
 
+    function showGlobalSupportButton() {
+        const globalSupportBtn = document.getElementById('globalSupportBtn');
+        if (globalSupportBtn) {
+            globalSupportBtn.style.display = 'block';
+            startTypingAnimation();
+        }
+    }
+
+    function showGlobalMapButton() {
+        const globalMapBtn = document.getElementById('globalMapBtn');
+        if (globalMapBtn) {
+            globalMapBtn.style.display = 'block';
+        }
+    }
+
+    function typeLoadingMessage() {
+        const loadingText = document.getElementById('loadingText');
+        const fullText = "Never Run Out of Power";
+        let index = 0;
+
+        const typeInterval = setInterval(() => {
+            if (index < fullText.length) {
+                loadingText.textContent = fullText.substring(0, index + 1);
+                index++;
+            } else {
+                clearInterval(typeInterval);
+            }
+        }, 50); // Adjust speed as needed (50ms per character)
+    }
+
     function startTypingAnimation() {
-        const subtextElement = document.getElementById('supportSubtext');
-        const typingElement = subtextElement.querySelector('.typewriter-text');
-        const fullText = "Tap for questions, complaints, and refunds!";
-
-        // Start typing animation after a small delay
-        setTimeout(() => {
-            let index = 0;
-            typingElement.textContent = '';
-
-            const typeInterval = setInterval(() => {
-                if (index < fullText.length) {
-                    typingElement.textContent = fullText.substring(0, index + 1);
-                    index++;
-                } else {
-                    clearInterval(typeInterval);
-                    // Remove cursor after typing is complete
-                    typingElement.classList.remove('typing-animation');
+        // Try to find the supportSubtext element with a retry mechanism
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        const tryStartAnimation = () => {
+            const subtextElement = document.getElementById('supportSubtext');
+            if (!subtextElement) {
+                attempts++;
+                if (attempts < maxAttempts) {
+                    setTimeout(tryStartAnimation, 100);
                 }
-            }, 75); // Adjust speed as needed (75ms per character)
-        }, 500); // Delay before starting typing
+                return;
+            }
+            
+            const typingElement = subtextElement.querySelector('.typewriter-text');
+            if (!typingElement) {
+                attempts++;
+                if (attempts < maxAttempts) {
+                    setTimeout(tryStartAnimation, 100);
+                }
+                return;
+            }
+            
+            const fullText = "Tap for questions, complaints, and refunds!";
+
+            // Start typing animation after a small delay
+            setTimeout(() => {
+                let index = 0;
+                typingElement.textContent = '';
+
+                const typeInterval = setInterval(() => {
+                    if (index < fullText.length) {
+                        typingElement.textContent = fullText.substring(0, index + 1);
+                        index++;
+                    } else {
+                        clearInterval(typeInterval);
+                        // Remove cursor after typing is complete
+                        typingElement.classList.remove('typing-animation');
+                    }
+                }, 75); // Adjust speed as needed (75ms per character)
+            }, 500); // Delay before starting typing
+        };
+        
+        tryStartAnimation();
     }
 
     window.onload = async () => {
@@ -1639,8 +1786,8 @@
         // Set up code digit inputs
         setupCodeDigitInputs();
 
-        // Start typing animation for customer support text
-        startTypingAnimation();
+        // Set up battery ID digit inputs
+        setupBatteryIdInputs();
 
 
     };
@@ -1887,11 +2034,11 @@
                 localStorage.setItem(localStorageKey, 'true');
 
                 document.getElementById('phoneForm').style.display = 'none';
-                document.getElementById('output').style.display = 'block';
-                document.getElementById('buttons-container').style.display = 'block';
+                            document.getElementById('output').style.display = 'block';
+            document.getElementById('buttons-container').style.display = 'block';
 
-                // Fetch and display battery data immediately
-                fetchBatteryData();
+            // Fetch and display battery data immediately
+            fetchBatteryData();
             } else {
                 const error = await response.json();
 
@@ -1983,6 +2130,9 @@
         if (!batteryId && path !== '/demo') {
             // Show landing page when no battery ID and not on /demo
             document.getElementById('landing-container').style.display = 'block';
+            // Show global buttons for landing page
+            showGlobalSupportButton();
+            showGlobalMapButton();
             return;
         }
 
@@ -2097,6 +2247,104 @@
         }
 
         document.getElementById('phoneForm').style.display = 'flex';
+    }
+
+    function setupBatteryIdInputs() {
+        const batteryIdDigits = document.querySelectorAll('.battery-id-digit');
+
+        batteryIdDigits.forEach((input, index) => {
+            input.addEventListener('input', function(e) {
+                // Convert to uppercase and only allow alphanumeric characters
+                e.target.value = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+                if (e.target.value) {
+                    e.target.style.borderColor = '#009FFF';
+                    // Move to next input
+                    if (index < batteryIdDigits.length - 1) {
+                        batteryIdDigits[index + 1].focus();
+                    }
+
+                    // Check if all inputs are filled
+                    checkBatteryIdComplete();
+                } else {
+                    e.target.style.borderColor = '#262626';
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                // Handle backspace
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    batteryIdDigits[index - 1].focus();
+                    batteryIdDigits[index - 1].value = '';
+                    batteryIdDigits[index - 1].style.borderColor = '#262626';
+                }
+
+                // Handle arrow keys
+                if (e.key === 'ArrowLeft' && index > 0) {
+                    batteryIdDigits[index - 1].focus();
+                }
+                if (e.key === 'ArrowRight' && index < batteryIdDigits.length - 1) {
+                    batteryIdDigits[index + 1].focus();
+                }
+
+                // Handle Enter key
+                if (e.key === 'Enter') {
+                    goToBatteryId();
+                }
+            });
+
+            input.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const pastedData = e.clipboardData.getData('text').replace(/[^A-Za-z0-9]/g, '').toUpperCase().substring(0, 4);
+
+                for (let i = 0; i < pastedData.length && i < batteryIdDigits.length; i++) {
+                    batteryIdDigits[i].value = pastedData[i];
+                    batteryIdDigits[i].style.borderColor = '#009FFF';
+                }
+
+                if (pastedData.length >= 4) {
+                    checkBatteryIdComplete();
+                }
+            });
+        });
+    }
+
+    function checkBatteryIdComplete() {
+        const batteryIdDigits = document.querySelectorAll('.battery-id-digit');
+        let batteryId = '';
+
+        batteryIdDigits.forEach(input => {
+            batteryId += input.value;
+        });
+
+        if (batteryId.length === 4) {
+            // Auto-submit when all 4 digits are entered
+            setTimeout(() => {
+                goToBatteryId();
+            }, 300);
+        }
+    }
+
+    function goToBatteryId() {
+        const batteryIdDigits = document.querySelectorAll('.battery-id-digit');
+        let batteryId = '';
+
+        batteryIdDigits.forEach(input => {
+            batteryId += input.value;
+        });
+        
+        if (batteryId.length === 0) {
+            alert('Please enter a battery ID');
+            return;
+        }
+        
+        if (batteryId.length < 4) {
+            alert('Please enter a complete 4-digit battery ID');
+            return;
+        }
+        
+        // Navigate to the battery ID page
+        window.location.href = `/${batteryId}`;
     }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
