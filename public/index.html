@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>Battery Rental Status</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,8 +18,15 @@
             background-color: #000000;
             color: #FFFFFF;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
             box-sizing: border-box;
+            margin: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
 
         @media (max-width: 768px) {
@@ -870,6 +877,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            height: 100dvh;
             font-size: 13px;
             font-weight: normal;
             color: #B0D2FF;
@@ -1236,6 +1244,7 @@
                         justify-content: center;
                         align-items: center;
                         height: 100vh;
+                        height: 100dvh;
                         font-size: 13px;
                         font-weight: normal;
                         color: #B0D2FF;
