@@ -11,17 +11,6 @@
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
     <style>
-        html {
-            height: 100vh;
-            height: 100dvh;
-            width: 100vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
             font-family: Arial, sans-serif;
             text-align: center;
@@ -30,19 +19,14 @@
             color: #FFFFFF;
             height: 100vh;
             height: 100dvh;
-            width: 100%;
             overflow: hidden;
             box-sizing: border-box;
             margin: 0;
-            /* position: fixed; */
-            /* top: 0; left: 0; right: 0; bottom: 0; */
-            touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
 
         @media (max-width: 768px) {
@@ -948,11 +932,7 @@
             ">
             Customer Support
         </div>
-        <div style="
-                font-size: 13px;
-                color: #B0D2FF;
-                margin-top: 10px;
-            ">
+        <div id="supportSubtext" style="font-size: 13px; color: #B0D2FF; margin-top: 10px;">
             Tap for questions, complaints, and refunds!
         </div>
     </button>
@@ -1007,6 +987,10 @@
         'BJH09881': {
             address: 'Coleman Entrepreneurship Center, 7th floor, Room 7900, Chicago, IL',
             coordinates: [-87.62716, 41.87767]
+        },
+        'BJH09882': {
+            address: "Kelly's Pub, Chicago, IL",
+            coordinates: [-87.65298, 41.92158]
         }
     };
 
@@ -1709,6 +1693,7 @@
         const globalSupportBtn = document.getElementById('globalSupportBtn');
         if (globalSupportBtn) {
             globalSupportBtn.style.display = 'block';
+            startTypingAnimation();
         }
     }
 
@@ -2169,15 +2154,6 @@
             return;
         }
 
-        // NEW: For /batteryid pages, always show output/buttons, never require phone
-        if (path !== '/' && path !== '/demo') {
-            document.getElementById('output').style.display = 'block';
-            document.getElementById('buttons-container').style.display = 'block';
-            fetchBatteryData();
-            return;
-        }
-
-        // (The rest of the function remains unchanged for other routes)
         // Enhanced localStorage check - look for global user data and battery-specific data
         const globalUserData = localStorage.getItem('cuub_user_data');
         const batterySpecificKey = `phone_verified_${batteryId}`;

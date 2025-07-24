@@ -129,7 +129,7 @@ app.get('/api/stations', async (req, res) => {
         return res.json(cachedData);
     }
 
-    const stationIds = ['DTN00872', 'DTN00971', 'DTN00970', 'BJH09881'];
+    const stationIds = ['DTN00872', 'DTN00971', 'DTN00970', 'BJH09881', 'BJH09882'];
     const stationPromises = stationIds.map(async (id) => {
         try {
             const response = await fetch(`https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=${id}`, {
@@ -166,6 +166,10 @@ app.get('/api/stations', async (req, res) => {
                 'BJH09881': { 
                     name: 'DePaul University Coleman Entrepreneurship Center', 
                     coordinates: [-87.62716, 41.87767] 
+                },
+                'BJH09882': {
+                    name: "Kelly's Pub",
+                    coordinates: [-87.65298, 41.92158]
                 }
             };
 
