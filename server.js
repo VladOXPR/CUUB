@@ -164,8 +164,8 @@ app.get('/api/stations', async (req, res) => {
                     coordinates: [-87.65875687443715, 41.92483761368347] 
                 },
                 'BJH09881': { 
-                    name: 'DePaul University Coleman Entrepreneurship Center', 
-                    coordinates: [-87.62716, 41.87767] 
+                    name: 'Parlay Lincoln Park', 
+                    coordinates: [-87.65328, 41.92927] 
                 },
                 'BJH09882': {
                     name: "Kelly's Pub",

@@ -985,8 +985,8 @@
             coordinates: [-87.65875687443715, 41.92483761368347]
         },
         'BJH09881': {
-            address: 'Coleman Entrepreneurship Center, 7th floor, Room 7900, Chicago, IL',
-            coordinates: [-87.62716, 41.87767]
+            address: 'Parlay Lincoln Park, Chicago, IL',
+            coordinates: [-87.65328, 41.92927]
         },
         'BJH09882': {
             address: "Kelly's Pub, Chicago, IL",
@@ -1056,9 +1056,9 @@
                 },
                 {
                     id: 'BJH09881',
-                    name: 'DePaul University Coleman Entrepreneurship Center',
-                    address: 'Coleman Entrepreneurship Center, 7th floor, Room 7900, Chicago, IL',
-                    coordinates: [-87.62716, 41.87767],
+                    name: 'DePaul University Parlay Lincoln Park',
+                    address: 'Parlay Lincoln Park, Chicago, IL',
+                    coordinates: [-87.65328, 41.92927],
                     available: 0,
                     occupied: 0,
                     error: true
@@ -1197,96 +1197,111 @@
         }
 
         if (!batteryId) {
-            const randomMinutes = Math.floor(Math.random() * 60) + 1;
-            borrowTime = DateTime.now().minus({ minutes: randomMinutes });
+            // Only show demo content if we're specifically on the /demo route
+            if (path === '/demo') {
+                const randomMinutes = Math.floor(Math.random() * 60) + 1;
+                borrowTime = DateTime.now().minus({ minutes: randomMinutes });
 
-            // Only show newContainer if we're on the /demo route
-            const isDemoRoute = path === '/demo';
-            const newContainerHTML = isDemoRoute ? `
-                <div id="newContainer" onclick="window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');">
-                    <div style="
-                        font-size: 20px;
-                        font-family: Arial, sans-serif;
-                        font-weight: bold;
-                        color: #FFFFFF;
-                        margin: 0px;
-                    ">
-                        $3 OFF
-                    </div>
-                    <div style="
-                        font-size: 13px;
-                        font-family: Arial, sans-serif;
-                        color: #FFFFFF;
-                        margin-top: 10px;
-                        line-height: 1.3;
-                    ">
-                        Download and register<br>
-                        the sizl app to get<br>
-                        money back
-                    </div>
-                    <div class="sizl-text"><i>s</i>izl</div>
-                </div>
-            ` : '';
-
-            // Hide loading message and show battery content
-            if (loadingMessage && batteryContent) {
-                loadingMessage.style.display = 'none';
-                batteryContent.style.display = 'block';
-            }
-            
-            // Show global buttons after content is loaded
-            showGlobalSupportButton();
-            showGlobalMapButton();
-
-            outputDiv.innerHTML = `
-                <div id="loadingMessage" style="
-                        display: none;
-                        justify-content: center;
-                        align-items: center;
-                        height: 100vh;
-                        height: 100dvh;
-                        font-size: 13px;
-                        font-weight: normal;
-                        color: #B0D2FF;
-                        text-align: center;
-                        margin-top: -100px;
-                    ">
-                    <span id="loadingText"></span>
-                </div>
-                
-                <div id="batteryContent" style="display: block;">
-                    <div id="elapsedTimeContainer">
-                        <p style="
-                            margin: 0px;
-                            font-size: 13px;
+                const newContainerHTML = `
+                    <div id="newContainer" onclick="window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');">
+                        <div style="
+                            font-size: 20px;
+                            font-family: Arial, sans-serif;
                             font-weight: bold;
-                            color: #CCCCCC;
+                            color: #FFFFFF;
+                            margin: 0px;
                         ">
-                            Rent Duration
-                        </p>
-                        <p id="elapsedTime">${getTimeElapsed(borrowTime)}</p>
+                            $3 OFF
+                        </div>
+                        <div style="
+                            font-size: 13px;
+                            font-family: Arial, sans-serif;
+                            color: #FFFFFF;
+                            margin-top: 10px;
+                            line-height: 1.3;
+                        ">
+                            Download and register<br>
+                            the sizl app to get<br>
+                            money back
+                        </div>
+                        <div class="sizl-text"><i>s</i>izl</div>
                     </div>
+                `;
 
-                    <div class="containers-wrapper">
-                        <div id="amountPaidContainer">
+                // Hide loading message and show battery content
+                if (loadingMessage && batteryContent) {
+                    loadingMessage.style.display = 'none';
+                    batteryContent.style.display = 'block';
+                }
+                
+                // Show global buttons after content is loaded
+                showGlobalSupportButton();
+                showGlobalMapButton();
+
+                outputDiv.innerHTML = `
+                    <div id="loadingMessage" style="
+                            display: none;
+                            justify-content: center;
+                            align-items: center;
+                            height: 100vh;
+                            height: 100dvh;
+                            font-size: 13px;
+                            font-weight: normal;
+                            color: #B0D2FF;
+                            text-align: center;
+                            margin-top: -100px;
+                        ">
+                        <span id="loadingText"></span>
+                    </div>
+                    
+                    <div id="batteryContent" style="display: block;">
+                        <div id="elapsedTimeContainer">
                             <p style="
                                 margin: 0px;
-                                font-size: 20px;
-                                font-family: Arial, sans-serif;
+                                font-size: 13px;
                                 font-weight: bold;
-                                font-style: normal;
                                 color: #CCCCCC;
-                                width: fit-content;
                             ">
-                                Paid
+                                Rent Duration
                             </p>
-                            <p id="amountPaid" style="font-family: Arial, sans-serif; font-weight: bold; font-size: 50px;">$3.00</p>
+                            <p id="elapsedTime">${getTimeElapsed(borrowTime)}</p>
                         </div>
-                        ${newContainerHTML}
+
+                        <div class="containers-wrapper">
+                            <div id="amountPaidContainer">
+                                <p style="
+                                    margin: 0px;
+                                    font-size: 20px;
+                                    font-family: Arial, sans-serif;
+                                    font-weight: bold;
+                                    font-style: normal;
+                                    color: #CCCCCC;
+                                    width: fit-content;
+                                ">
+                                    Paid
+                                </p>
+                                <p id="amountPaid" style="font-family: Arial, sans-serif; font-weight: bold; font-size: 50px;">$3.00</p>
+                            </div>
+                            ${newContainerHTML}
+                        </div>
                     </div>
-                </div>
-            `;
-            showRentalStatus();
+                `;
+                showRentalStatus();
+            } else {
+                // For landing page (no battery ID and not /demo), just hide the loading message
+                // and show global buttons without any battery content
+                if (loadingMessage && batteryContent) {
+                    loadingMessage.style.display = 'none';
+                    batteryContent.style.display = 'none';
+                }
+                
+                // Show global buttons
+                showGlobalSupportButton();
+                showGlobalMapButton();
+                
+                // Clear any content
+                outputDiv.innerHTML = '';
+            }
             return;
         }
 
@@ -1655,8 +1670,8 @@
     function showBottomPopup(station) {
         currentStation = station;
         document.getElementById('popupTitle').textContent = station.name;
-        document.getElementById('availableSlots').textContent = station.available;
-        document.getElementById('occupiedSlots').textContent = station.occupied;
+        document.getElementById('availableSlots').textContent = station.occupied;
+        document.getElementById('occupiedSlots').textContent = station.available;
         document.getElementById('bottomPopup').classList.add('show');
     }
 
