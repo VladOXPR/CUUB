@@ -28,13 +28,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// Static files with caching
-app.use(express.static(path.join(__dirname, 'public'), {
-    maxAge: process.env.NODE_ENV === 'production' ? '1d' : '0'
-}));
-
-
-
 // API cache
 const apiCache = new Map();
 const CACHE_TTL = 10000; // 10 seconds
@@ -59,19 +52,19 @@ const getCachedData = (key) => {
     return null;
 };
 
-// Analytics tracking middleware
+// Analytics tracking middleware - only for specific routes
 const trackAnalytics = (req, res, next) => {
     const path = req.path;
     const userAgent = req.get('User-Agent') || '';
     const ip = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
     
-    // Create a simple visitor ID based on IP and User Agent
-    const visitorId = `${ip}-${userAgent}`.substring(0, 50);
-    
-    // Skip tracking for demo routes and API routes
-    if (path.startsWith('/demo') || path.startsWith('/api') || path.startsWith('/admin') || path === '/map.html') {
+    // Skip tracking for demo routes
+    if (path.startsWith('/demo')) {
         return next();
     }
+    
+    // Create a simple visitor ID based on IP and User Agent
+    const visitorId = `${ip}-${userAgent}`.substring(0, 50);
     
     const now = new Date();
     const dateKey = now.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -92,7 +85,7 @@ const trackAnalytics = (req, res, next) => {
     // Track specific page types
     if (path === '/') {
         analyticsData.landingPageVisits++;
-    } else if (path.length > 1 && !path.startsWith('/demo')) {
+    } else if (path.length > 1) {
         // This is a battery ID page
         analyticsData.batteryPageVisits++;
         const batteryId = path.substring(1);
@@ -102,8 +95,10 @@ const trackAnalytics = (req, res, next) => {
     next();
 };
 
-// Apply analytics tracking middleware
-app.use(trackAnalytics);
+// Static files with caching
+app.use(express.static(path.join(__dirname, 'public'), {
+    maxAge: process.env.NODE_ENV === 'production' ? '1d' : '0'
+}));
 
 // Admin route (must come before the catch-all battery ID route)
 app.get('/admin', (req, res) => {
@@ -114,8 +109,24 @@ app.get('/map.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/map.html'));
 });
 
-app.get('/:batteryId', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/index.html'));
+// Landing page route with analytics tracking
+app.get('/', trackAnalytics, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/index-backup.html'));
+});
+
+// Battery ID routes with analytics tracking (only for valid battery IDs)
+app.get('/:batteryId', (req, res, next) => {
+    const batteryId = req.params.batteryId;
+    
+    // Skip static files and other non-battery ID routes
+    if (batteryId.includes('.') || batteryId === 'favicon.ico' || batteryId === 'robots.txt' || batteryId === 'sitemap.xml') {
+        return next(); // Let static middleware handle these
+    }
+    
+    // Apply analytics tracking for valid battery IDs
+    trackAnalytics(req, res, () => {
+        res.sendFile(path.join(__dirname, 'public/index-backup.html'));
+    });
 });
 
 // Input validation middleware
