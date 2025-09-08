@@ -88,82 +88,33 @@
 </head>
 <body>
 <div class="container">
-    <h1>Phone Numbers Data</h1>
+    <h1>Admin Panel</h1>
 
     <div class="controls">
         <button class="refresh-btn" onclick="loadData()">Refresh Data</button>
-        <button class="download-btn" onclick="downloadExcel()">Download Excel</button>
     </div>
 
     <div id="loading" class="loading">Loading data...</div>
 
-    <table id="dataTable" style="display: none;">
-        <thead>
-        <tr>
-            <th>Battery ID</th>
-            <th>Phone Number</th>
-            <th>Order ID</th>
-            <th>Real Battery ID</th>
-            <th>Rental Time</th>
-        </tr>
-        </thead>
-        <tbody id="tableBody">
-        </tbody>
-    </table>
-
-    <div id="noData" class="no-data" style="display: none;">
-        No phone number data found.
+    <div id="noData" class="no-data" style="display: block;">
+        Phone verification feature has been removed.
     </div>
 </div>
 
 <script>
     async function loadData() {
         const loading = document.getElementById('loading');
-        const table = document.getElementById('dataTable');
         const noData = document.getElementById('noData');
-        const tableBody = document.getElementById('tableBody');
 
         // Show loading state
         loading.style.display = 'block';
-        table.style.display = 'none';
         noData.style.display = 'none';
 
-        try {
-            const response = await fetch('/api/admin/phones');
-            const data = await response.json();
-
+        // Simulate loading
+        setTimeout(() => {
             loading.style.display = 'none';
-
-            if (data.length === 0) {
-                noData.style.display = 'block';
-            } else {
-                // Clear existing rows
-                tableBody.innerHTML = '';
-
-                // Add data rows
-                data.forEach(item => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                            <td>${item.batteryId}</td>
-                            <td>${item.phoneNumber}</td>
-                            <td>${item.orderId}</td>
-                            <td>${item.realBatteryId}</td>
-                            <td>${new Date(item.timestamp).toLocaleString()}</td>
-                        `;
-                    tableBody.appendChild(row);
-                });
-
-                table.style.display = 'table';
-            }
-        } catch (error) {
-            loading.style.display = 'none';
-            noData.innerHTML = 'Error loading data: ' + error.message;
             noData.style.display = 'block';
-        }
-    }
-
-    function downloadExcel() {
-        window.location.href = '/api/admin/export-excel';
+        }, 1000);
     }
 
     // Load data when page loads

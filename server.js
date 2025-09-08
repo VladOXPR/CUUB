@@ -4,9 +4,7 @@ const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
 const path = require('path');
-const XLSX = require('xlsx');
 const batteryIdMap = require('./public/batteryIdMap');
-const twilio = require('twilio');
 const compression = require('compression');
 
 const app = express();
@@ -35,24 +33,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
     maxAge: process.env.NODE_ENV === 'production' ? '1d' : '0'
 }));
 
-// Twilio configuration with Verify service
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_VERIFY_SERVICE_SID = process.env.TWILIO_VERIFY_SERVICE_SID;
 
-if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_VERIFY_SERVICE_SID) {
-    console.error('Missing Twilio environment variables. Please check your .env file.');
-    process.exit(1);
-}
-
-const twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
-console.log('Twilio initialized with Verify service');
-
-// In-memory storage for phone numbers (you may want to use a database in production)
-const phoneNumberStorage = new Map();
-
-// In-memory storage for verification codes
-const verificationStorage = new Map();
 
 // API cache
 const apiCache = new Map();
@@ -84,41 +65,7 @@ const validateBatteryId = (req, res, next) => {
     next();
 };
 
-const validatePhoneNumber = (req, res, next) => {
-    const { phoneNumber } = req.body;
-    if (!phoneNumber) {
-        return res.status(400).json({ error: "Phone number is required" });
-    }
-    
-    const cleanPhone = phoneNumber.replace(/\D/g, '');
-    if (cleanPhone.length !== 10) {
-        return res.status(400).json({ error: "Invalid phone number format" });
-    }
-    
-    req.cleanPhone = cleanPhone;
-    next();
-};
 
-// Rate limiting for verification endpoints
-const rateLimitMap = new Map();
-const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const MAX_REQUESTS = 3;
-
-const checkRateLimit = (identifier) => {
-    const now = Date.now();
-    const requests = rateLimitMap.get(identifier) || [];
-    
-    // Remove old requests outside the window
-    const validRequests = requests.filter(time => now - time < RATE_LIMIT_WINDOW);
-    
-    if (validRequests.length >= MAX_REQUESTS) {
-        return false;
-    }
-    
-    validRequests.push(now);
-    rateLimitMap.set(identifier, validRequests);
-    return true;
-};
 
 // Station data endpoint
 app.get('/api/stations', async (req, res) => {
@@ -255,152 +202,10 @@ app.get('/api/battery/:batteryId', validateBatteryId, async (req, res) => {
     }
 });
 
-// Phone number collection endpoints
-app.post('/api/phone/:batteryId/send-code', validateBatteryId, validatePhoneNumber, async (req, res) => {
-    const customBatteryId = req.params.batteryId;
-    const phoneNumber = req.cleanPhone;
-    
-    // Check rate limiting
-    if (!checkRateLimit(phoneNumber)) {
-        return res.status(429).json({ error: "Too many verification attempts. Please try again later." });
-    }
-    
-    try {
-        const formattedPhone = `+1${phoneNumber}`;
-        
-        // Store verification data temporarily
-        verificationStorage.set(customBatteryId, {
-            phoneNumber: phoneNumber,
-            expires: Date.now() + 600000 // 10 minutes
-        });
 
-        // Use Twilio Verify to send verification code
-        const verification = await twilioClient.verify.v2.services(TWILIO_VERIFY_SERVICE_SID)
-            .verifications
-            .create({to: formattedPhone, channel: 'sms'});
 
-        console.log(`Verification sent to ${formattedPhone} for battery ${customBatteryId}, SID: ${verification.sid}`);
 
-        res.json({ 
-            success: true, 
-            message: "Verification code sent successfully"
-        });
-    } catch (error) {
-        console.error('Error sending verification:', error);
-        res.status(500).json({ error: "Failed to send verification code" });
-    }
-});
 
-// Endpoint to verify code and complete registration
-app.post('/api/phone/:batteryId/verify-code', async (req, res) => {
-    const customBatteryId = req.params.batteryId;
-    const { code } = req.body;
-
-    if (!code) {
-        return res.status(400).json({ error: "Verification code is required" });
-    }
-
-    const verificationData = verificationStorage.get(customBatteryId);
-
-    if (!verificationData) {
-        return res.status(404).json({ error: "No verification request found" });
-    }
-
-    if (Date.now() > verificationData.expires) {
-        verificationStorage.delete(customBatteryId);
-        return res.status(400).json({ error: "Verification code expired" });
-    }
-
-    try {
-        const formattedPhone = `+1${verificationData.phoneNumber}`;
-        
-        // Use Twilio Verify to check verification code
-        const verificationCheck = await twilioClient.verify.v2.services(TWILIO_VERIFY_SERVICE_SID)
-            .verificationChecks
-            .create({to: formattedPhone, code: code});
-
-        if (verificationCheck.status === 'approved') {
-            // Store the phone number data
-            const realBatteryId = batteryIdMap[customBatteryId];
-            
-            phoneNumberStorage.set(customBatteryId, {
-                batteryId: customBatteryId,
-                phoneNumber: verificationData.phoneNumber,
-                realBatteryId: realBatteryId,
-                orderId: `ORDER_${Date.now()}`,
-                timestamp: new Date().toISOString()
-            });
-            
-            // Clean up verification storage
-            verificationStorage.delete(customBatteryId);
-            
-            console.log(`Phone verification successful for battery ${customBatteryId}, phone: ${verificationData.phoneNumber}`);
-            
-            res.json({ 
-                success: true, 
-                message: "Phone number verified and registered successfully"
-            });
-        } else {
-            res.status(400).json({ error: "Invalid verification code" });
-        }
-    } catch (error) {
-        console.error('Error verifying code:', error);
-        res.status(500).json({ error: "Failed to verify code" });
-    }
-});
-
-// Check if phone number exists for battery
-app.get('/api/phone/:batteryId', validateBatteryId, (req, res) => {
-    const customBatteryId = req.params.batteryId;
-    const phoneData = phoneNumberStorage.get(customBatteryId);
-    
-    if (phoneData) {
-        res.json({ 
-            hasPhone: true, 
-            phoneNumber: phoneData.phoneNumber,
-            orderId: phoneData.orderId 
-        });
-    } else {
-        res.json({ hasPhone: false });
-    }
-});
-
-// Admin endpoints
-app.get('/api/admin/phones', (req, res) => {
-    const phoneData = Array.from(phoneNumberStorage.values());
-    res.json(phoneData);
-});
-
-app.get('/api/admin/export-excel', (req, res) => {
-    try {
-        const phoneData = Array.from(phoneNumberStorage.values());
-        
-        if (phoneData.length === 0) {
-            return res.status(404).json({ error: 'No data to export' });
-        }
-
-        // Create a new workbook
-        const wb = XLSX.utils.book_new();
-        
-        // Convert data to worksheet
-        const ws = XLSX.utils.json_to_sheet(phoneData);
-        
-        // Add the worksheet to the workbook
-        XLSX.utils.book_append_sheet(wb, ws, 'Phone Numbers');
-        
-        // Generate buffer
-        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-        
-        // Set headers for file download
-        res.setHeader('Content-Disposition', 'attachment; filename=phone_numbers.xlsx');
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        
-        res.send(buffer);
-    } catch (error) {
-        console.error('Error generating Excel file:', error);
-        res.status(500).json({ error: 'Failed to generate Excel file' });
-    }
-});
 
 // Admin page
 app.get('/admin', (req, res) => {

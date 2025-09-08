@@ -177,174 +177,6 @@
             text-align: Center;
         }
 
-        #phoneForm {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 9999;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .phone-popup {
-            background-color: #1F1F1F;
-            border: 2px solid #262626;
-            border-radius: 20px;
-            padding: 30px 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            max-width: 380px;
-            width: calc(100% - 40px);
-            text-align: center;
-            margin: 0 20px;
-        }
-
-        @media (max-width: 768px) {
-            .phone-popup {
-                padding: 25px 20px;
-                border-radius: 15px;
-                width: calc(100% - 40px);
-                margin: 0 20px;
-            }
-        }
-
-        .phone-popup h1 {
-            color: #FFFFFF;
-            margin-bottom: 10px;
-            font-size: 28px;
-            margin-top: 0;
-        }
-
-        .phone-popup p {
-            color: #CCCCCC;
-            margin-bottom: 30px;
-            text-align: center;
-            line-height: 1.5;
-        }
-
-        #phoneInput, #codeInput {
-            width: 100%;
-            max-width: 280px;
-            padding: 12px 16px;
-            font-size: 17px;
-            border: 2px solid #262626;
-            border-radius: 12px;
-            background-color: #000000;
-            color: #FFFFFF;
-            margin-bottom: 20px;
-            text-align: center;
-            box-sizing: border-box;
-        }
-
-        @media (max-width: 768px) {
-            #phoneInput, #codeInput {
-                font-size: 16px;
-                padding: 14px 16px;
-                border-radius: 10px;
-                max-width: 100%;
-            }
-        }
-
-        #phoneInput:focus, #codeInput:focus {
-            outline: none;
-            border-color: #009FFF;
-        }
-
-        .code-input-container {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .code-digit {
-            width: 45px;
-            height: 50px;
-            padding: 0;
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            border: 2px solid #262626;
-            border-radius: 8px;
-            background-color: #000000;
-            color: #FFFFFF;
-            box-sizing: border-box;
-        }
-
-        @media (max-width: 768px) {
-            .code-digit {
-                width: 40px;
-                height: 45px;
-                font-size: 20px;
-            }
-
-            .code-input-container {
-                gap: 6px;
-            }
-        }
-
-        .code-digit:focus {
-            outline: none;
-            border-color: #009FFF;
-        }
-
-        .code-digit.filled {
-            border-color: #009FFF;
-        }
-
-        #submitPhoneBtn, #submitCodeBtn, #resendCodeBtn {
-            width: 100%;
-            max-width: 280px;
-            padding: 14px 16px;
-            font-size: 17px;
-            font-weight: bold;
-            color: white;
-            background-color: #009FFF;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            box-sizing: border-box;
-            margin-bottom: 10px;
-        }
-
-        @media (max-width: 768px) {
-            #submitPhoneBtn, #submitCodeBtn, #resendCodeBtn {
-                font-size: 16px;
-                padding: 16px;
-                border-radius: 10px;
-                max-width: 100%;
-            }
-        }
-
-        #submitPhoneBtn:hover, #submitCodeBtn:hover {
-            background-color: #007ACC;
-        }
-
-        #submitPhoneBtn:disabled, #submitCodeBtn:disabled, #resendCodeBtn:disabled {
-            background-color: #666666;
-            cursor: not-allowed;
-        }
-
-        #resendCodeBtn {
-            background-color: #666666;
-        }
-
-        #resendCodeBtn:hover:not(:disabled) {
-            background-color: #777777;
-        }
-
-        .error-message {
-            color: #FE402E;
-            margin-top: 10px;
-            font-size: 14px;
-        }
 
         .support-btn {
             display: block;
@@ -727,28 +559,6 @@
     </div>
 </div>
 
-<div id="phoneForm" style="display: none;">
-    <div class="phone-popup">
-        <div id="phoneStep" style="display: block;">
-            <h1>Add your phone number to access discount!</h1>
-            <input type="tel" id="phoneInput" placeholder="(555) 123-4567" maxlength="14">
-            <button id="submitPhoneBtn" onclick="submitPhoneNumber()">Send Code</button>
-            <div id="phoneError" class="error-message"></div>
-        </div>
-        <div id="codeStep" style="display: none;">
-            <h1>Enter verification code</h1>
-            <p>We sent a 4-digit code to your phone number</p>
-            <div class="code-input-container">
-                <input type="text" class="code-digit" maxlength="1" data-index="0">
-                <input type="text" class="code-digit" maxlength="1" data-index="1">
-                <input type="text" class="code-digit" maxlength="1" data-index="2">
-                <input type="text" class="code-digit" maxlength="1" data-index="3">
-            </div>
-            <button id="resendCodeBtn" onclick="resendCode()" style="background-color: #666; margin-top: 20px;">Resend Code</button>
-            <div id="codeError" class="error-message"></div>
-        </div>
-    </div>
-</div>
 
 <!-- Landing page content - shown when no battery ID -->
 <div id="landing-container" style="display: none;">
@@ -963,7 +773,6 @@
 <script>
     const { DateTime } = luxon;
     let borrowTime = null;
-    let phoneSubmitted = false;
     let map = null;
     let currentStation = null;
     let selectedStationIndex = -1;
@@ -1791,7 +1600,34 @@
     }
 
     window.onload = async () => {
-        checkPhoneStatus();
+        const path = window.location.pathname;
+        let batteryId = '';
+
+        if (path.startsWith('/demo/')) {
+            batteryId = path.substring(6); // Remove '/demo/'
+        } else if (path.startsWith('/demo')) {
+            batteryId = ''; // Just /demo with no battery ID
+        } else if (path !== '/' && path !== '') {
+            batteryId = path.substring(1); // Remove leading '/' for direct battery ID
+        }
+
+        currentBatteryId = batteryId;
+
+        // If no battery ID and not on /demo, show landing page
+        if (!batteryId && path !== '/demo') {
+            document.getElementById('landing-container').style.display = 'block';
+            // Show global buttons for landing page
+            showGlobalSupportButton();
+            showGlobalMapButton();
+            // Set up battery ID digit inputs
+            setupBatteryIdInputs();
+            return;
+        }
+
+        // For battery ID pages or /demo, show battery content directly (skip phone verification)
+        document.getElementById('output').style.display = 'block';
+        document.getElementById('buttons-container').style.display = 'block';
+        
         setInterval(updateElapsedTime, 1000);
         setInterval(fetchBatteryData, 10000);
 
@@ -1801,28 +1637,11 @@
         // Update station data every 30 seconds
         setInterval(fetchStationData, 30000);
 
-        const phoneInput = document.getElementById('phoneInput');
-        const codeInput = document.getElementById('codeInput');
-
-        if (phoneInput) {
-            phoneInput.addEventListener('input', function(e) {
-                e.target.value = formatPhoneNumber(e.target.value);
-            });
-
-            phoneInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    submitPhoneNumber();
-                }
-            });
-        }
-
-        // Set up code digit inputs
-        setupCodeDigitInputs();
-
         // Set up battery ID digit inputs
         setupBatteryIdInputs();
 
-
+        // Fetch battery data immediately
+        fetchBatteryData();
     };
 
     function contactSupport() {
@@ -1835,452 +1654,15 @@
         window.location.href = `sms:7739460236?body=${message}`;
     }
 
-    async function handleSizlButtonClick() {
-        try {
-            // Get user's phone number and battery ID
-            const batteryId = currentBatteryId;
-            const phoneData = phoneSubmitted ? await getPhoneData(batteryId) : null;
 
-            if (!phoneData || !phoneData.phoneNumber) {
-                alert('Phone number required. Please refresh and enter your phone number first.');
-                return;
-            }
 
-            // Send webhook to Sizl with user data
-            const host = window.location.hostname;
-            const port = window.location.port ? `:${window.location.port}` : '';
-            const protocol = window.location.protocol;
-            const response = await fetch(`${protocol}//${host}${port}/api/sizl/webhook`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    batteryId: batteryId,
-                    phoneNumber: phoneData.phoneNumber,
-                    orderId: phoneData.orderId
-                })
-            });
 
-            if (webhookResponse.ok) {
-                // Open Sizl download page
-                window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');
-            } else {
-                console.error('Failed to send webhook to Sizl');
-                // Still open the page even if webhook fails
-                window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');
-            }
-        } catch (error) {
-            console.error('Error handling Sizl button click:', error);
-            // Fallback to opening the page
-            window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');
-        }
-    }
 
-    async function getPhoneData(batteryId) {
-        try {
-            const response = await fetch(`/api/phone/data/${batteryId}`);
-            if (response.ok) {
-                return await response.json();
-            }
-            return null;
-        } catch (error) {
-            console.error('Error getting phone data:', error);
-            return null;
-        }
-    }
 
-    function formatPhoneNumber(value) {
-        const phone = value.replace(/\D/g, '');
-        const match = phone.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
-        if (!match) return phone;
 
-        const formatted = `${match[1]}${match[2] ? `-${match[2]}` : ''}${match[3] ? `-${match[3]}` : ''}`;
-        return formatted;
-    }
 
-    async function submitPhoneNumber() {
-        const phoneInput = document.getElementById('phoneInput');
-        const submitBtn = document.getElementById('submitPhoneBtn');
-        const errorDiv = document.getElementById('phoneError');
-        const batteryId = currentBatteryId;
 
-        const phoneNumber = phoneInput.value.replace(/\D/g, '');
 
-        if (phoneNumber.length !== 10) {
-            errorDiv.textContent = 'Please enter a valid 10-digit phone number';
-            return;
-        }
-
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Sending...';
-        errorDiv.textContent = '';
-
-        try {
-            const response = await fetch(`/api/phone/${batteryId}/send-code`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ phoneNumber: phoneNumber })
-            });
-
-            if (response.ok) {
-                // Show verification step
-                document.getElementById('phoneStep').style.display = 'none';
-                document.getElementById('codeStep').style.display = 'block';
-            } else {
-                const error = await response.json();
-                errorDiv.textContent = error.error || 'Failed to send verification code';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Send Code';
-            }
-        } catch (error) {
-            errorDiv.textContent = 'Network error. Please try again.';
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Send Code';
-        }
-    }
-
-    function setupCodeDigitInputs() {
-        const codeDigits = document.querySelectorAll('.code-digit');
-
-        codeDigits.forEach((input, index) => {
-            input.addEventListener('input', function(e) {
-                // Only allow numbers
-                e.target.value = e.target.value.replace(/\D/g, '');
-
-                if (e.target.value) {
-                    e.target.classList.add('filled');
-                    // Move to next input
-                    if (index < codeDigits.length - 1) {
-                        codeDigits[index + 1].focus();
-                    }
-
-                    // Check if all inputs are filled
-                    checkCodeComplete();
-                } else {
-                    e.target.classList.remove('filled');
-                }
-            });
-
-            input.addEventListener('keydown', function(e) {
-                // Handle backspace
-                if (e.key === 'Backspace' && !e.target.value && index > 0) {
-                    codeDigits[index - 1].focus();
-                    codeDigits[index - 1].value = '';
-                    codeDigits[index - 1].classList.remove('filled');
-                }
-
-                // Handle arrow keys
-                if (e.key === 'ArrowLeft' && index > 0) {
-                    codeDigits[index - 1].focus();
-                }
-                if (e.key === 'ArrowRight' && index < codeDigits.length - 1) {
-                    codeDigits[index + 1].focus();
-                }
-            });
-
-            input.addEventListener('paste', function(e) {
-                e.preventDefault();
-                const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').substring(0, 4);
-
-                for (let i = 0; i < pastedData.length && i < codeDigits.length; i++) {
-                    codeDigits[i].value = pastedData[i];
-                    codeDigits[i].classList.add('filled');
-                }
-
-                if (pastedData.length >= 4) {
-                    checkCodeComplete();
-                }
-            });
-        });
-    }
-
-    function checkCodeComplete() {
-        const codeDigits = document.querySelectorAll('.code-digit');
-        let code = '';
-
-        codeDigits.forEach(input => {
-            code += input.value;
-        });
-
-        if (code.length === 4) {
-            submitVerificationCode(code);
-        }
-    }
-
-    async function submitVerificationCode(codeOverride = null) {
-        const errorDiv = document.getElementById('codeError');
-        const batteryId = currentBatteryId;
-        const codeDigits = document.querySelectorAll('.code-digit');
-        const resendBtn = document.getElementById('resendCodeBtn');
-
-        let code = codeOverride;
-        if (!code) {
-            code = '';
-            codeDigits.forEach(input => {
-                code += input.value;
-            });
-        }
-
-        if (code.length !== 4) {
-            errorDiv.textContent = 'Please enter all 4 digits';
-            return;
-        }
-
-        // Hide the code input boxes and show verifying state
-        document.querySelector('.code-input-container').style.display = 'none';
-        resendBtn.style.display = 'none';
-        errorDiv.textContent = '';
-        errorDiv.style.color = '#009FFF';
-        errorDiv.textContent = 'Verifying...';
-
-        try {
-            const response = await fetch(`/api/phone/${batteryId}/verify-code`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ code: code })
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                phoneSubmitted = true;
-
-                // Get phone number from input
-                const phoneInput = document.getElementById('phoneInput');
-                const phoneNumber = phoneInput.value.replace(/\D/g, '');
-
-                // Store both global and battery-specific verification in localStorage
-                const userData = {
-                    hasVerifiedPhone: true,
-                    lastVerifiedBattery: batteryId,
-                    lastLoginDate: new Date().toISOString(),
-                    phoneNumber: phoneNumber,
-                    totalBatteriesUsed: (JSON.parse(localStorage.getItem('cuub_user_data') || '{}').totalBatteriesUsed || 0) + 1
-                };
-                localStorage.setItem('cuub_user_data', JSON.stringify(userData));
-
-                const localStorageKey = `phone_verified_${batteryId}`;
-                localStorage.setItem(localStorageKey, 'true');
-
-                document.getElementById('phoneForm').style.display = 'none';
-                            document.getElementById('output').style.display = 'block';
-            document.getElementById('buttons-container').style.display = 'block';
-
-            // Fetch and display battery data immediately
-            fetchBatteryData();
-            } else {
-                const error = await response.json();
-
-                // Show error state and resend button
-                document.querySelector('.code-input-container').style.display = 'flex';
-                errorDiv.style.color = '#FE402E';
-                errorDiv.textContent = error.error || 'Failed to verify code';
-                resendBtn.style.display = 'block';
-
-                // Clear the inputs on error
-                codeDigits.forEach(input => {
-                    input.value = '';
-                    input.classList.remove('filled');
-                });
-                codeDigits[0].focus();
-            }
-        } catch (error) {
-            // Show error state and resend button
-            document.querySelector('.code-input-container').style.display = 'flex';
-            errorDiv.style.color = '#FE402E';
-            errorDiv.textContent = 'Network error. Please try again.';
-            resendBtn.style.display = 'block';
-
-            // Clear the inputs on error
-            codeDigits.forEach(input => {
-                input.value = '';
-                input.classList.remove('filled');
-            });
-            codeDigits[0].focus();
-        }
-    }
-
-    async function resendCode() {
-        const phoneInput = document.getElementById('phoneInput');
-        const resendBtn = document.getElementById('resendCodeBtn');
-        const errorDiv = document.getElementById('codeError');
-        const batteryId = currentBatteryId;
-
-        const phoneNumber = phoneInput.value.replace(/\D/g, '');
-
-        resendBtn.disabled = true;
-        resendBtn.textContent = 'Sending...';
-        errorDiv.textContent = '';
-
-        try {
-            const response = await fetch(`/api/phone/${batteryId}/send-code`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ phoneNumber: phoneNumber })
-            });
-
-            if (response.ok) {
-                errorDiv.textContent = '';
-                errorDiv.style.color = '#4CAF50';
-                errorDiv.textContent = 'Code resent successfully!';
-                setTimeout(() => {
-                    errorDiv.textContent = '';
-                    errorDiv.style.color = '#FE402E';
-                }, 3000);
-            } else {
-                const error = await response.json();
-                errorDiv.textContent = error.error || 'Failed to resend code';
-            }
-        } catch (error) {
-            errorDiv.textContent = 'Network error. Please try again.';
-        }
-
-        resendBtn.disabled = false;
-        resendBtn.textContent = 'Resend Code';
-    }
-
-    async function checkPhoneStatus() {
-        const path = window.location.pathname;
-        let batteryId = '';
-
-        if (path.startsWith('/demo/')) {
-            batteryId = path.substring(6); // Remove '/demo/'
-        } else if (path === '/demo') {
-            batteryId = ''; // Just /demo with no battery ID - show demo content
-        } else if (path !== '/' && path !== '') {
-            batteryId = path.substring(1); // Remove leading '/' for direct battery ID
-        }
-
-        currentBatteryId = batteryId;
-
-        // Only show landing page for root path, not /demo
-        if (!batteryId && path !== '/demo') {
-            // Show landing page when no battery ID and not on /demo
-            document.getElementById('landing-container').style.display = 'block';
-            // Show global buttons for landing page
-            showGlobalSupportButton();
-            showGlobalMapButton();
-            return;
-        }
-
-        // Skip phone verification for /demo route - show demo content directly
-        if (path === '/demo') {
-            phoneSubmitted = true;
-            document.getElementById('output').style.display = 'block';
-            document.getElementById('buttons-container').style.display = 'block';
-            fetchBatteryData();
-            return;
-        }
-
-        // Enhanced localStorage check - look for global user data and battery-specific data
-        const globalUserData = localStorage.getItem('cuub_user_data');
-        const batterySpecificKey = `phone_verified_${batteryId}`;
-        const batterySpecificVerified = localStorage.getItem(batterySpecificKey);
-
-        // Check if user has previously verified their phone number
-        if (globalUserData || batterySpecificVerified === 'true') {
-            try {
-                // Check with server to make sure the phone number still exists for this battery
-                const response = await fetch(`/api/phone/${batteryId}`);
-                const data = await response.json();
-
-                if (data.hasPhone) {
-                    phoneSubmitted = true;
-
-                    // Store both global and battery-specific verification
-                    if (globalUserData) {
-                        const userData = JSON.parse(globalUserData);
-                        userData.lastVerifiedBattery = batteryId;
-                        userData.lastLoginDate = new Date().toISOString();
-                        localStorage.setItem('cuub_user_data', JSON.stringify(userData));
-                    } else {
-                        // Create global user data from battery-specific verification
-                        const newUserData = {
-                            hasVerifiedPhone: true,
-                            lastVerifiedBattery: batteryId,
-                            lastLoginDate: new Date().toISOString(),
-                            phoneNumber: data.phoneNumber || null
-                        };
-                        localStorage.setItem('cuub_user_data', JSON.stringify(newUserData));
-                    }
-
-                    localStorage.setItem(batterySpecificKey, 'true');
-                    document.getElementById('output').style.display = 'block';
-                    document.getElementById('buttons-container').style.display = 'block';
-                    fetchBatteryData();
-                    return;
-                } else {
-                    // Remove verification for this specific battery if server doesn't have it
-                    localStorage.removeItem(batterySpecificKey);
-                }
-            } catch (error) {
-                console.error('Error checking server phone status:', error);
-            }
-        }
-
-        // If no cached verification, check server
-        try {
-            const response = await fetch(`/api/phone/${batteryId}`);
-            const data = await response.json();
-
-            if (data.hasPhone) {
-                phoneSubmitted = true;
-
-                // Store verification data in localStorage
-                const userData = {
-                    hasVerifiedPhone: true,
-                    lastVerifiedBattery: batteryId,
-                    lastLoginDate: new Date().toISOString(),
-                    phoneNumber: data.phoneNumber || null
-                };
-                localStorage.setItem('cuub_user_data', JSON.stringify(userData));
-                localStorage.setItem(batterySpecificKey, 'true');
-
-                document.getElementById('output').style.display = 'block';
-                document.getElementById('buttons-container').style.display = 'block';
-                fetchBatteryData();
-            } else {
-                // Show phone form with welcome back message if user has used the service before
-                const globalUserData = localStorage.getItem('cuub_user_data');
-                if (globalUserData) {
-                    showPhoneFormWithWelcomeBack();
-                } else {
-                    document.getElementById('phoneForm').style.display = 'flex';
-                }
-            }
-        } catch (error) {
-            document.getElementById('phoneForm').style.display = 'flex';
-        }
-    }
-
-    function showPhoneFormWithWelcomeBack() {
-        const globalUserData = JSON.parse(localStorage.getItem('cuub_user_data'));
-        const phonePopup = document.querySelector('.phone-popup h1');
-        const phonePopupDescription = document.querySelector('.phone-popup p');
-
-        if (phonePopup && globalUserData) {
-            phonePopup.textContent = 'Welcome back!';
-            if (phonePopupDescription) {
-                phonePopupDescription.textContent = 'Enter your phone number to continue with this battery.';
-            }
-
-            // Pre-fill phone number if we have it
-            if (globalUserData.phoneNumber) {
-                const phoneInput = document.getElementById('phoneInput');
-                if (phoneInput) {
-                    phoneInput.value = formatPhoneNumber(globalUserData.phoneNumber);
-                }
-            }
-        }
-
-        document.getElementById('phoneForm').style.display = 'flex';
-    }
 
     function setupBatteryIdInputs() {
         const batteryIdDigits = document.querySelectorAll('.battery-id-digit');
