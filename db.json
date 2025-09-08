@@ -1,0 +1,21 @@
+{
+  "analytics": {
+    "totalVisits": 4,
+    "landingPageVisits": 2,
+    "batteryPageVisits": 2,
+    "uniqueVisitors": [
+      "127.0.0.1-curl/8.4.0",
+      "127.0.0.1-Mozilla/5.0 (Macintosh; Intel Mac OS X 1"
+    ],
+    "visitsByBatteryId": {
+      "A131": 1,
+      "A132": 1
+    },
+    "dailyVisits": {
+      "2025-09-08": 4
+    },
+    "hourlyVisits": {
+      "2025-09-08-16": 4
+    }
+  }
+}
