@@ -39,6 +39,17 @@ app.use(express.static(path.join(__dirname, 'public'), {
 const apiCache = new Map();
 const CACHE_TTL = 10000; // 10 seconds
 
+// Analytics storage
+const analyticsData = {
+    totalVisits: 0,
+    landingPageVisits: 0,
+    batteryPageVisits: 0,
+    uniqueVisitors: new Set(),
+    visitsByBatteryId: new Map(),
+    dailyVisits: new Map(),
+    hourlyVisits: new Map()
+};
+
 const getCachedData = (key) => {
     const cached = apiCache.get(key);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -47,6 +58,57 @@ const getCachedData = (key) => {
     apiCache.delete(key);
     return null;
 };
+
+// Analytics tracking middleware
+const trackAnalytics = (req, res, next) => {
+    const path = req.path;
+    const userAgent = req.get('User-Agent') || '';
+    const ip = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+    
+    // Create a simple visitor ID based on IP and User Agent
+    const visitorId = `${ip}-${userAgent}`.substring(0, 50);
+    
+    // Skip tracking for demo routes and API routes
+    if (path.startsWith('/demo') || path.startsWith('/api') || path.startsWith('/admin') || path === '/map.html') {
+        return next();
+    }
+    
+    const now = new Date();
+    const dateKey = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const hourKey = `${dateKey}-${now.getHours()}`; // YYYY-MM-DD-HH
+    
+    // Track total visits
+    analyticsData.totalVisits++;
+    
+    // Track unique visitors
+    analyticsData.uniqueVisitors.add(visitorId);
+    
+    // Track daily visits
+    analyticsData.dailyVisits.set(dateKey, (analyticsData.dailyVisits.get(dateKey) || 0) + 1);
+    
+    // Track hourly visits
+    analyticsData.hourlyVisits.set(hourKey, (analyticsData.hourlyVisits.get(hourKey) || 0) + 1);
+    
+    // Track specific page types
+    if (path === '/') {
+        analyticsData.landingPageVisits++;
+    } else if (path.length > 1 && !path.startsWith('/demo')) {
+        // This is a battery ID page
+        analyticsData.batteryPageVisits++;
+        const batteryId = path.substring(1);
+        analyticsData.visitsByBatteryId.set(batteryId, (analyticsData.visitsByBatteryId.get(batteryId) || 0) + 1);
+    }
+    
+    next();
+};
+
+// Apply analytics tracking middleware
+app.use(trackAnalytics);
+
+// Admin route (must come before the catch-all battery ID route)
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/admin.html'));
+});
 
 app.get('/map.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/map.html'));
@@ -207,10 +269,46 @@ app.get('/api/battery/:batteryId', validateBatteryId, async (req, res) => {
 
 
 
-// Admin page
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/admin.html'));
+// Analytics API endpoints
+app.get('/api/analytics', (req, res) => {
+    try {
+        const analytics = {
+            totalVisits: analyticsData.totalVisits,
+            landingPageVisits: analyticsData.landingPageVisits,
+            batteryPageVisits: analyticsData.batteryPageVisits,
+            uniqueVisitors: analyticsData.uniqueVisitors.size,
+            visitsByBatteryId: Object.fromEntries(analyticsData.visitsByBatteryId),
+            dailyVisits: Object.fromEntries(analyticsData.dailyVisits),
+            hourlyVisits: Object.fromEntries(analyticsData.hourlyVisits),
+            lastUpdated: new Date().toISOString()
+        };
+        res.json(analytics);
+    } catch (error) {
+        console.error('Error fetching analytics:', error);
+        res.status(500).json({ error: 'Failed to fetch analytics data' });
+    }
 });
+
+app.get('/api/analytics/summary', (req, res) => {
+    try {
+        const summary = {
+            totalVisits: analyticsData.totalVisits,
+            landingPageVisits: analyticsData.landingPageVisits,
+            batteryPageVisits: analyticsData.batteryPageVisits,
+            uniqueVisitors: analyticsData.uniqueVisitors.size,
+            topBatteryIds: Array.from(analyticsData.visitsByBatteryId.entries())
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10)
+                .map(([id, visits]) => ({ batteryId: id, visits })),
+            lastUpdated: new Date().toISOString()
+        };
+        res.json(summary);
+    } catch (error) {
+        console.error('Error fetching analytics summary:', error);
+        res.status(500).json({ error: 'Failed to fetch analytics summary' });
+    }
+});
+
 
 // Logging middleware for development
 if (process.env.NODE_ENV !== 'production') {
