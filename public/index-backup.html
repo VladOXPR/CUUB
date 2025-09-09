@@ -138,16 +138,8 @@
             position: relative;
         }
 
-        .sizl-text {
-            position: absolute;
-            font-size: 30px;
-            color: #FFFFFF;
-            font-family: Arial, sans-serif;
-            right: 10px;
-            bottom: 5px;
-        }
 
-        #newContainer > div:not(.sizl-text) {
+        #newContainer > div {
             position: relative;
             z-index: 2;
         }
@@ -707,7 +699,7 @@
                 ">
                 Rent Duration
             </p>
-            <p id="elapsedTime">Loading...</p>
+            <p id="elapsedTime">--:--:--</p>
         </div>
 
         <div class="containers-wrapper">
@@ -723,7 +715,7 @@
                     ">
                     Paid
                 </p>
-                <p id="amountPaid">Loading...</p>
+                <p id="amountPaid">$0.00</p>
             </div>
         </div>
     </div>
@@ -778,6 +770,7 @@
     let selectedStationIndex = -1;
     let statusUpdateInterval = null;
     let currentBatteryId = null;
+    let isFirstLoad = true;
 
     // DePaul University station locations with static coordinates and addresses
     const stationLocations = {
@@ -985,6 +978,51 @@
         }
     }
 
+    function updateBatteryData(data) {
+        if (data.pGhtime) {
+            // Battery returned - update the content
+            const chiReturnTime = convertChinaToChicagoTime(data.pGhtime);
+            const finalAmountPaid = data.finalAmountPaid || calculateAmountPaid(convertChinaToChicagoTime(data.pBorrowtime), chiReturnTime);
+            
+            // Update the elapsed time container
+            const elapsedTimeContainer = document.getElementById('elapsedTimeContainer');
+            if (elapsedTimeContainer) {
+                elapsedTimeContainer.innerHTML = `
+                    <p style="
+                        margin: 0px;
+                        font-size: 25px;
+                        font-weight: bold;
+                        color: #FFFFFF;
+                    ">
+                        Battery Returned
+                    </p>
+                `;
+            }
+            
+            // Update the amount paid
+            const amountPaidElement = document.getElementById('amountPaid');
+            if (amountPaidElement) {
+                amountPaidElement.textContent = finalAmountPaid;
+            }
+        } else {
+            // Active rental - update the time and amount
+            borrowTime = convertChinaToChicagoTime(data.pBorrowtime);
+            if (borrowTime) {
+                // Update elapsed time
+                const elapsedTimeElement = document.getElementById('elapsedTime');
+                if (elapsedTimeElement) {
+                    elapsedTimeElement.textContent = getTimeElapsed(borrowTime);
+                }
+                
+                // Update amount paid
+                const amountPaidElement = document.getElementById('amountPaid');
+                if (amountPaidElement) {
+                    amountPaidElement.textContent = calculateAmountPaid(borrowTime);
+                }
+            }
+        }
+    }
+
     async function fetchBatteryData() {
         const path = window.location.pathname;
         let batteryId = '';
@@ -1002,8 +1040,8 @@
         const loadingMessage = document.getElementById("loadingMessage");
         const batteryContent = document.getElementById("batteryContent");
 
-        // Show loading message first and hide global buttons
-        if (loadingMessage && batteryContent) {
+        // Show loading message only on first load
+        if (isFirstLoad && loadingMessage && batteryContent) {
             loadingMessage.style.display = 'flex';
             batteryContent.style.display = 'none';
             // Hide global buttons during loading
@@ -1021,7 +1059,7 @@
                 borrowTime = DateTime.now().minus({ minutes: randomMinutes });
 
                 const newContainerHTML = `
-                    <div id="newContainer" onclick="window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');">
+                    <div id="newContainer" onclick="window.open('https://calendly.com/vlad-valchkou-cuub/intro-to-investors', '_blank');">
                         <div style="
                             font-size: 20px;
                             font-family: Arial, sans-serif;
@@ -1055,6 +1093,9 @@
                 // Show global buttons after content is loaded
                 showGlobalSupportButton();
                 showGlobalMapButton();
+                
+                // Mark that first load is complete
+                isFirstLoad = false;
 
                 outputDiv.innerHTML = `
                     <div id="loadingMessage" style="
@@ -1119,6 +1160,9 @@
                 
                 // Clear any content
                 outputDiv.innerHTML = '';
+                
+                // Mark that first load is complete
+                isFirstLoad = false;
             }
             return;
         }
@@ -1144,6 +1188,15 @@
             showGlobalSupportButton();
             showGlobalMapButton();
             
+            // If not first load, just update the existing elements
+            if (!isFirstLoad) {
+                updateBatteryData(data);
+                return;
+            }
+            
+            // Mark that first load is complete
+            isFirstLoad = false;
+
             outputDiv.innerHTML = "";
 
             if (data.pGhtime) {
@@ -1177,7 +1230,7 @@
                             </p>
                             <p id="amountPaid" style="font-family: Arial, sans-serif; font-weight: bold; font-size: 50px;">${finalAmountPaid}</p>
                         </div>
-                        <div id="newContainer" onclick="window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');">
+                        <div id="newContainer" onclick="window.open('https://calendly.com/vlad-valchkou-cuub/intro-to-investors', '_blank');">
                             <div style="
                                 font-size: 20px;
                                 font-family: Arial, sans-serif;
@@ -1215,7 +1268,7 @@
                             ">
                                 Rent Duration
                             </p>
-                            <p id="elapsedTime">Loading...</p>
+                            <p id="elapsedTime">--:--:--</p>
                         </div>
 
                         <div class="containers-wrapper">
@@ -1231,9 +1284,9 @@
                                 ">
                                     Paid
                                 </p>
-                                <p id="amountPaid">Loading...</p>
+                                <p id="amountPaid">$0.00</p>
                             </div>
-                            <div id="newContainer" onclick="window.open('https://join.sizl.com/download?gad_source=1&gad_campaignid=22219313015&gbraid=0AAAAAq09m4SKH1GEmpDrN-jVrpvEI0e-C&gclid=Cj0KCQjwpf7CBhCfARIsANIETVpv5sYTNK_JWvoYSKHzHIN21adMO_Wlc2TRaJzJirNyfWokgVHsSVcaAlicEALw_wcB&fbp=fb.1.1751129709957.223715049220526725', '_blank');">
+                            <div id="newContainer" onclick="window.open('https://calendly.com/vlad-valchkou-cuub/intro-to-investors', '_blank');">
                                 <div style="
                                     font-size: 20px;
                                     font-family: Arial, sans-serif;
@@ -1241,7 +1294,7 @@
                                     color: #FFFFFF;
                                     margin: 0px;
                                 ">
-                                    $3 OFF
+                                    GET A REFUND!
                                 </div>
                                 <div style="
                                     font-size: 13px;
@@ -1250,11 +1303,10 @@
                                     margin-top: 10px;
                                     line-height: 1.3;
                                 ">
-                                    Download and register<br>
-                                    the sizl app to get<br>
-                                    money back
+                                    Schedule a one on one<br>
+                                    feedback session<br>
+                                    with the founder
                                 </div>
-                                <div class="sizl-text"><i>s</i>izl</div>
                             </div>
                         </div>
                     `;
