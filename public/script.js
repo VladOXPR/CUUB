@@ -16,7 +16,17 @@ function getTimeElapsed(startTime) {
 
 function calculateAmountPaid(startTime) {
     if (!startTime) return "$0.00";
-    return `$${(Math.ceil(DateTime.now().diff(startTime, 'hours').hours) * 3).toFixed(2)}`;
+    const hoursElapsed = DateTime.now().diff(startTime, 'hours').hours;
+    let amount = 0;
+
+    if (hoursElapsed <= 168) {
+        const days = Math.ceil(hoursElapsed / 24);
+        amount = days * 3;
+    } else {
+        amount = 21;
+    }
+
+    return `$${amount.toFixed(2)}`;
 }
 
 function updateElapsedTime() {

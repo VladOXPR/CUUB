@@ -87,6 +87,19 @@
             box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
         }
 
+        @media (min-width: 480px) {
+            .bottom-popup {
+                left: 50%;
+                right: auto;
+                width: 450px;
+                transform: translateX(-50%) translateY(calc(100% + 50px));
+            }
+            
+            .bottom-popup.show {
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
         .bottom-popup.show {
             transform: translateY(0);
         }
@@ -363,11 +376,11 @@
         const hoursElapsed = DateTime.now().diff(startTime, 'hours').hours;
         let amount = 0;
 
-        if (hoursElapsed <= 72) {
+        if (hoursElapsed <= 168) {
             const days = Math.ceil(hoursElapsed / 24);
             amount = days * 3;
         } else {
-            amount = 40;
+            amount = 21;
         }
 
         return `$${amount.toFixed(2)}`;
