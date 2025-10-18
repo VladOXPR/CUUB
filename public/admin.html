@@ -122,6 +122,188 @@
         .metric-value {
             color: #2196F3;
         }
+        
+        /* Station Management Styles */
+        .station-section {
+            margin-top: 40px;
+        }
+        .station-card {
+            background: #1E1E1E;
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid #4D4D4D;
+            margin-bottom: 20px;
+        }
+        .station-card h3 {
+            margin-top: 0;
+            color: #ffffff;
+            font-size: 18px;
+        }
+        .station-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .station-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #4D4D4D;
+        }
+        .station-item:last-child {
+            border-bottom: none;
+        }
+        .station-info {
+            flex: 1;
+        }
+        .station-name {
+            font-weight: bold;
+            color: #ffffff;
+            font-size: 16px;
+        }
+        .station-details {
+            color: #CCCCCC;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .station-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-edit {
+            background-color: #FF9800;
+            color: white;
+        }
+        .btn-delete {
+            background-color: #F44336;
+            color: white;
+        }
+        .btn-small:hover {
+            opacity: 0.8;
+        }
+        
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            color: #ffffff;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #4D4D4D;
+            border-radius: 8px;
+            background-color: #2D2D2D;
+            color: #ffffff;
+            font-size: 14px;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #0099FF;
+        }
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .coordinates-input {
+            display: flex;
+            gap: 10px;
+        }
+        .coordinates-input input {
+            flex: 1;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .btn-primary {
+            background-color: #0099FF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-secondary {
+            background-color: #666666;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary:hover {
+            background-color: #007ACC;
+        }
+        .btn-secondary:hover {
+            background-color: #555555;
+        }
+        .add-station-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .add-station-btn:hover {
+            background-color: #45a049;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+        }
+        .modal-content {
+            background-color: #1E1E1E;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 600px;
+            border: 1px solid #4D4D4D;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 {
+            color: #ffffff;
+            margin: 0;
+        }
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #ffffff;
+        }
     </style>
 </head>
 <body>
@@ -167,6 +349,57 @@
             <h3>Daily Visits (Last 7 Days)</h3>
             <div id="dailyVisits" class="metric-list"></div>
         </div>
+    </div>
+
+    <!-- Station Management Section -->
+    <div class="station-section">
+        <div class="station-card">
+            <h3>Station Management</h3>
+            <button class="add-station-btn" onclick="openAddStationModal()">+ Add New Station</button>
+            
+            <div id="stationsLoading" class="loading">Loading stations...</div>
+            <div id="stationsList" class="station-list" style="display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Station Modal -->
+<div id="stationModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Add New Station</h2>
+            <span class="close" onclick="closeStationModal()">&times;</span>
+        </div>
+        
+        <form id="stationForm">
+            <div class="form-group">
+                <label for="stationId">Station ID *</label>
+                <input type="text" id="stationId" name="id" required placeholder="e.g., DTN00873">
+            </div>
+            
+            <div class="form-group">
+                <label for="stationName">Station Name *</label>
+                <input type="text" id="stationName" name="name" required placeholder="e.g., DePaul New Location">
+            </div>
+            
+            <div class="form-group">
+                <label for="stationAddress">Address *</label>
+                <textarea id="stationAddress" name="address" required placeholder="Full address including city and state"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Coordinates *</label>
+                <div class="coordinates-input">
+                    <input type="number" id="longitude" name="longitude" step="any" required placeholder="Longitude (e.g., -87.65415)">
+                    <input type="number" id="latitude" name="latitude" step="any" required placeholder="Latitude (e.g., 41.92335)">
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeStationModal()">Cancel</button>
+                <button type="submit" class="btn-primary" id="submitBtn">Add Station</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -289,8 +522,176 @@
             });
     }
 
-    // Load analytics when page loads
-    window.onload = loadAnalytics;
+    // Station Management Functions
+    let currentEditingStation = null;
+
+    async function loadStations() {
+        const loading = document.getElementById('stationsLoading');
+        const stationsList = document.getElementById('stationsList');
+
+        loading.style.display = 'block';
+        stationsList.style.display = 'none';
+
+        try {
+            const response = await fetch('/api/admin/stations');
+            const stations = await response.json();
+
+            stationsList.innerHTML = '';
+            
+            if (stations.length === 0) {
+                stationsList.innerHTML = '<div class="metric-item">No stations found</div>';
+            } else {
+                stations.forEach(station => {
+                    const stationDiv = document.createElement('div');
+                    stationDiv.className = 'station-item';
+                    stationDiv.innerHTML = `
+                        <div class="station-info">
+                            <div class="station-name">${station.name}</div>
+                            <div class="station-details">
+                                ID: ${station.id} | ${station.address}<br>
+                                Coordinates: ${station.coordinates[0]}, ${station.coordinates[1]}
+                            </div>
+                        </div>
+                        <div class="station-actions">
+                            <button class="btn-small btn-edit" onclick="editStation('${station.id}')">Edit</button>
+                            <button class="btn-small btn-delete" onclick="deleteStation('${station.id}')">Delete</button>
+                        </div>
+                    `;
+                    stationsList.appendChild(stationDiv);
+                });
+            }
+
+            loading.style.display = 'none';
+            stationsList.style.display = 'block';
+        } catch (error) {
+            loading.style.display = 'none';
+            stationsList.innerHTML = '<div class="metric-item">Error loading stations: ' + error.message + '</div>';
+            stationsList.style.display = 'block';
+        }
+    }
+
+    function openAddStationModal() {
+        currentEditingStation = null;
+        document.getElementById('modalTitle').textContent = 'Add New Station';
+        document.getElementById('submitBtn').textContent = 'Add Station';
+        document.getElementById('stationForm').reset();
+        document.getElementById('stationModal').style.display = 'block';
+    }
+
+    function editStation(stationId) {
+        currentEditingStation = stationId;
+        document.getElementById('modalTitle').textContent = 'Edit Station';
+        document.getElementById('submitBtn').textContent = 'Update Station';
+        
+        // Load station data
+        fetch('/api/admin/stations')
+            .then(response => response.json())
+            .then(stations => {
+                const station = stations.find(s => s.id === stationId);
+                if (station) {
+                    document.getElementById('stationId').value = station.id;
+                    document.getElementById('stationId').disabled = true; // Don't allow ID changes
+                    document.getElementById('stationName').value = station.name;
+                    document.getElementById('stationAddress').value = station.address;
+                    document.getElementById('longitude').value = station.coordinates[0];
+                    document.getElementById('latitude').value = station.coordinates[1];
+                    document.getElementById('stationModal').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                alert('Error loading station data: ' + error.message);
+            });
+    }
+
+    function closeStationModal() {
+        document.getElementById('stationModal').style.display = 'none';
+        document.getElementById('stationId').disabled = false;
+        currentEditingStation = null;
+    }
+
+    async function deleteStation(stationId) {
+        if (!confirm(`Are you sure you want to delete station ${stationId}?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/admin/stations/${stationId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                alert('Station deleted successfully');
+                loadStations(); // Reload the list
+            } else {
+                const error = await response.json();
+                alert('Error deleting station: ' + error.error);
+            }
+        } catch (error) {
+            alert('Error deleting station: ' + error.message);
+        }
+    }
+
+    // Handle form submission
+    document.getElementById('stationForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const stationData = {
+            id: formData.get('id'),
+            name: formData.get('name'),
+            address: formData.get('address'),
+            coordinates: [parseFloat(formData.get('longitude')), parseFloat(formData.get('latitude'))]
+        };
+
+        try {
+            let response;
+            if (currentEditingStation) {
+                // Update existing station
+                response = await fetch(`/api/admin/stations/${currentEditingStation}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(stationData)
+                });
+            } else {
+                // Add new station
+                response = await fetch('/api/admin/stations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(stationData)
+                });
+            }
+
+            if (response.ok) {
+                const result = await response.json();
+                alert(result.message);
+                closeStationModal();
+                loadStations(); // Reload the list
+            } else {
+                const error = await response.json();
+                alert('Error: ' + error.error);
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    });
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('stationModal');
+        if (event.target === modal) {
+            closeStationModal();
+        }
+    }
+
+    // Load analytics and stations when page loads
+    window.onload = function() {
+        loadAnalytics();
+        loadStations();
+    };
 </script>
 </body>
 </html>

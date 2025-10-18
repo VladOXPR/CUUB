@@ -256,92 +256,97 @@ app.get('/api/stations', async (req, res) => {
     }
 });
 
-// API Key authentication middleware
-const authenticateApiKey = (req, res, next) => {
-    const apiKey = req.headers['x-api-key'] || req.headers['api-key'];
-    
-    if (!apiKey) {
-        return res.status(401).json({ error: 'API key required' });
-    }
-    
-    if (apiKey !== 'cuubisgoated123') {
-        return res.status(403).json({ error: 'Invalid API key' });
-    }
-    
-    next();
-};
-
 // Locations data endpoint
 app.get('/api/locations', (req, res) => {
     res.json(locationManager.getForMap());
 });
 
-// Add new location endpoint
-app.post('/api/locations', authenticateApiKey, (req, res) => {
+// Station management endpoints
+app.get('/api/admin/stations', (req, res) => {
+    res.json(locationManager.getAll());
+});
+
+app.post('/api/admin/stations', (req, res) => {
     try {
         const { id, name, address, coordinates } = req.body;
         
         // Validate required fields
         if (!id || !name || !address || !coordinates) {
-            return res.status(400).json({ 
-                error: 'Missing required fields. Required: id, name, address, coordinates' 
-            });
+            return res.status(400).json({ error: 'Missing required fields: id, name, address, coordinates' });
         }
         
         // Validate coordinates format
         if (!Array.isArray(coordinates) || coordinates.length !== 2) {
-            return res.status(400).json({ 
-                error: 'Coordinates must be an array with exactly 2 elements [longitude, latitude]' 
-            });
+            return res.status(400).json({ error: 'Coordinates must be an array with [longitude, latitude]' });
         }
         
-        // Check if location already exists
+        // Check if station already exists
         if (locationManager.getById(id)) {
-            return res.status(409).json({ 
-                error: `Location with ID '${id}' already exists` 
-            });
+            return res.status(409).json({ error: 'Station with this ID already exists' });
         }
         
-        // Add the new location
-        locationManager.add(id, {
-            name,
-            address,
-            coordinates
-        });
+        // Add the new station
+        locationManager.add(id, { name, address, coordinates });
         
         res.status(201).json({ 
-            message: 'Location added successfully',
-            location: locationManager.getById(id)
+            message: 'Station added successfully', 
+            station: locationManager.getById(id) 
         });
-        
     } catch (error) {
-        console.error('Error adding location:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Error adding station:', error);
+        res.status(500).json({ error: 'Failed to add station' });
     }
 });
 
-// Remove location endpoint
-app.delete('/api/locations/:id', authenticateApiKey, (req, res) => {
+app.put('/api/admin/stations/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, address, coordinates } = req.body;
+        
+        // Check if station exists
+        if (!locationManager.getById(id)) {
+            return res.status(404).json({ error: 'Station not found' });
+        }
+        
+        // Validate coordinates format if provided
+        if (coordinates && (!Array.isArray(coordinates) || coordinates.length !== 2)) {
+            return res.status(400).json({ error: 'Coordinates must be an array with [longitude, latitude]' });
+        }
+        
+        // Update the station
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (address) updateData.address = address;
+        if (coordinates) updateData.coordinates = coordinates;
+        
+        locationManager.update(id, updateData);
+        
+        res.json({ 
+            message: 'Station updated successfully', 
+            station: locationManager.getById(id) 
+        });
+    } catch (error) {
+        console.error('Error updating station:', error);
+        res.status(500).json({ error: 'Failed to update station' });
+    }
+});
+
+app.delete('/api/admin/stations/:id', (req, res) => {
     try {
         const { id } = req.params;
         
-        // Check if location exists
+        // Check if station exists
         if (!locationManager.getById(id)) {
-            return res.status(404).json({ 
-                error: `Location with ID '${id}' not found` 
-            });
+            return res.status(404).json({ error: 'Station not found' });
         }
         
-        // Remove the location
+        // Remove the station
         locationManager.remove(id);
         
-        res.json({ 
-            message: `Location '${id}' removed successfully` 
-        });
-        
+        res.json({ message: 'Station deleted successfully' });
     } catch (error) {
-        console.error('Error removing location:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Error deleting station:', error);
+        res.status(500).json({ error: 'Failed to delete station' });
     }
 });
 

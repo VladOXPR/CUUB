@@ -31,12 +31,6 @@ const locations = {
         name: "Kelly's Pub",
         address: "Kelly's Pub, Chicago, IL",
         coordinates: [-87.65298, 41.92158]
-    },
-    'DEMO_STATION_001': {
-        id: 'DEMO_STATION_001',
-        name: 'Demo Battery Station',
-        address: '456 Demo Avenue, Chicago, IL',
-        coordinates: [-87.6244, 41.8781]
     }
 };
 
