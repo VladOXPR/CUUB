@@ -6,6 +6,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const batteryIdMap = require('./public/batteryIdMap');
+const { locationManager } = require('./locations.js');
 const compression = require('compression');
 
 const app = express();
@@ -201,7 +202,7 @@ app.get('/api/stations', async (req, res) => {
         return res.json(cachedData);
     }
 
-    const stationIds = ['DTN00872', 'DTN00971', 'DTN00970', 'BJH09881', 'BJH09883'];
+    const stationIds = locationManager.getAllIds();
     const stationPromises = stationIds.map(async (id) => {
         try {
             const response = await fetch(`https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=${id}`, {
@@ -221,34 +222,13 @@ app.get('/api/stations', async (req, res) => {
 
             const data = await response.json();
             
-            // Map station names and coordinates
-            const stationInfo = {
-                'DTN00872': {
-                    name: 'DePaul LP Student Center',
-                    coordinates: [-87.65415, 41.92335]
-                },
-                'DTN00971': {
-                    name: 'DePaul University Loop',
-                    coordinates: [-87.6298, 41.8776]
-                },
-                'DTN00970': {
-                    name: 'DePaul Theater School',
-                    coordinates: [-87.65875687443715, 41.92483761368347]
-                },
-                'BJH09881': {
-                    name: 'Parlay Lincoln Park',
-                    coordinates: [-87.65328, 41.92927]
-                },
-                'BJH09883': {
-                    name: "Kelly's Pub",
-                    coordinates: [-87.65298, 41.92158]
-                }
-            };
+            // Get station info from centralized location data
+            const stationInfo = locationManager.getById(id);
 
             return {
                 id,
-                name: stationInfo[id]?.name || `Station ${id}`,
-                coordinates: stationInfo[id]?.coordinates || [0, 0],
+                name: stationInfo?.name || `Station ${id}`,
+                coordinates: stationInfo?.coordinates || [0, 0],
                 available: data.data?.cabinet?.emptySlots || 0,
                 occupied: data.data?.cabinet?.busySlots || 0,
                 error: false
@@ -273,6 +253,95 @@ app.get('/api/stations', async (req, res) => {
     } catch (error) {
         console.error('Error fetching station data:', error);
         res.status(500).json({ error: 'Failed to fetch station data' });
+    }
+});
+
+// API Key authentication middleware
+const authenticateApiKey = (req, res, next) => {
+    const apiKey = req.headers['x-api-key'] || req.headers['api-key'];
+    
+    if (!apiKey) {
+        return res.status(401).json({ error: 'API key required' });
+    }
+    
+    if (apiKey !== 'cuubisgoated123') {
+        return res.status(403).json({ error: 'Invalid API key' });
+    }
+    
+    next();
+};
+
+// Locations data endpoint
+app.get('/api/locations', (req, res) => {
+    res.json(locationManager.getForMap());
+});
+
+// Add new location endpoint
+app.post('/api/locations', authenticateApiKey, (req, res) => {
+    try {
+        const { id, name, address, coordinates } = req.body;
+        
+        // Validate required fields
+        if (!id || !name || !address || !coordinates) {
+            return res.status(400).json({ 
+                error: 'Missing required fields. Required: id, name, address, coordinates' 
+            });
+        }
+        
+        // Validate coordinates format
+        if (!Array.isArray(coordinates) || coordinates.length !== 2) {
+            return res.status(400).json({ 
+                error: 'Coordinates must be an array with exactly 2 elements [longitude, latitude]' 
+            });
+        }
+        
+        // Check if location already exists
+        if (locationManager.getById(id)) {
+            return res.status(409).json({ 
+                error: `Location with ID '${id}' already exists` 
+            });
+        }
+        
+        // Add the new location
+        locationManager.add(id, {
+            name,
+            address,
+            coordinates
+        });
+        
+        res.status(201).json({ 
+            message: 'Location added successfully',
+            location: locationManager.getById(id)
+        });
+        
+    } catch (error) {
+        console.error('Error adding location:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Remove location endpoint
+app.delete('/api/locations/:id', authenticateApiKey, (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Check if location exists
+        if (!locationManager.getById(id)) {
+            return res.status(404).json({ 
+                error: `Location with ID '${id}' not found` 
+            });
+        }
+        
+        // Remove the location
+        locationManager.remove(id);
+        
+        res.json({ 
+            message: `Location '${id}' removed successfully` 
+        });
+        
+    } catch (error) {
+        console.error('Error removing location:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 

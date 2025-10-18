@@ -1,20 +1,20 @@
 const batteryIdMap = {
-    "A001": "FECB06E557",
+    "A001": "FECB06E557", // *
     "A002": "FECB06E563",
     "A003": "FECB06E54E",
     "A004": "FECB06E560",
-    "A005": "FECB06E555",
+    "A005": "FECB06E555", // *
     "A006": "FECB06E556",
-    "A007": "FECB06E541",
+    "A007": "FECB06E541", // *
     "A008": "FECB06E543",
     "A009": "FECB06E562",
     "A010": "FECB06E534",
     "A011": "FECB06E54F",
-    "A012": "FECB06E55F",
-    "A013": "FECB06E55B",
+    "A012": "FECB06E55F", // *
+    "A013": "FECB06E55B", // *
     "A014": "FECB0783F0",
     "A015": "FECB077D85",
-    "A016": "FECB077CCC",
+    "A016": "FECB077CCC", // *
     "A017": "FECB077CCF",
     "A018": "FECB077D7C",
     "A019": "FECB0783F5",
@@ -24,63 +24,63 @@ const batteryIdMap = {
     "A023": "",
     "A024": "",
 
-    "A025": "FECB075EA2",
-    "A026": "FECB075E91",
+    "A025": "FECB075EA2", // *
+    "A026": "FECB075E91", // *
     "A027": "FECB077D6A",
-    "A028": "FECB075E80",
-    "A029": "FECB075E7F",
-    "A030": "FECB075E5C",
+    "A028": "FECB075E80", // *
+    "A029": "FECB075E7F", // *
+    "A030": "FECB075E5C", // *
     "A031": "FECB075E86",
     "A032": "FECB075E85",
     "A033": "FECB077D89",
-    "A034": "FECB075E8A",
+    "A034": "FECB075E8A", // *
     "A035": "FECB077CC6",
-    "A036": "FECB075E51",
-    "A037": "FECB075E96",
+    "A036": "FECB075E51", // *
+    "A037": "FECB075E96", // *
     "A038": "FECB075E6C",
     "A039": "FECB075E6F",
     "A040": "FECB075E6D",
-    "A041": "FECB075E58",
+    "A041": "FECB075E58", // *
     "A042": "FECB075E7E",
     "A043": "FECB078418",
     "A044": "FECB075E8F",
     "A045": "FECB075E81",
-    "A046": "FECB075E5A",
+    "A046": "FECB075E5A", // *
     "A047": "FECB075EA1",
     "A048": "FECB075E62",
     
     "A049": "FECB075E5E",
     "A050": "FECB075E90",
     "A051": "FECB075E95",
-    "A052": "FECB075E97",
+    "A052": "FECB075E97", // *
     "A053": "FECB075E84",
     "A054": "FECB075E8C",
-    "A055": "FECB075EA3",
+    "A055": "FECB075EA3", // *
     "A056": "FECB075E57",
     "A057": "FECB075E8E",
     "A058": "FECB075E60",
     "A059": "FECB075E59",
     "A060": "FECB075E87",
     "A061": "FECB075E93",
-    "A062": "FECB075E5D",
+    "A062": "FECB075E5D", // *
     "A063": "FECB075E63",
-    "A064": "FECB075E5F",
-    "A065": "FECB075E82",
+    "A064": "FECB075E5F", // *
+    "A065": "FECB075E82", // *
     "A066": "FECB075E9E",
     "A067": "FECB07841C",
     "A068": "FECB075E5B",
     "A069": "FECB075EA0",
     "A070": "FECB075E9C",
-    "A071": "FECB075E55",
-    "A072": "FECB075E88",
+    "A071": "FECB075E55", // *
+    "A072": "FECB075E88", // *
     "A073": "FECB075E98",
-    "A074": "",
-    "A075": "FECB075E94",
+    "A074": "", // *
+    "A075": "FECB075E94", // *
     "A076": "FECB075E4F",
     "A077": "",
-    "A078": "FECB075E7D",
+    "A078": "FECB075E7D", // *
     "A079": "",
-    "A080": "FECB075E83",
+    "A080": "FECB075E83", // *
     "A081": "FECB075E61",
     "A082": "FECB075E8D",
     "A083": "FECB075E6B",
@@ -93,7 +93,7 @@ const batteryIdMap = {
     "A089": "FECB0783F9",
     "A090": "FECB077D93",
     "A091": "FECB077D88",
-    "A092": "FECB077D6B",
+    "A092": "FECB077D6B", // *
     "A093": "FECB077D7A",
     "A094": "FECB077CC0",
     "A095": "FECB077D8D",
@@ -113,7 +113,7 @@ const batteryIdMap = {
     "A109": "FECB0783EB",
     "A110": "FECB077D79",
     "A111": "FECB0783E9",
-    "A112": "FECB077D94",
+    "A112": "FECB077D94", // *
     "A113": "FECB0783E6",
     "A114": "FECB077D8C",
     "A115": "FECB077D66",
@@ -124,7 +124,7 @@ const batteryIdMap = {
     "A120": "",
     "A121": "FECB077CCE",
     "A122": "FECB077D6D",
-    "A123": "FECB077D78",
+    "A123": "FECB077D78", // *
     "A124": "FECB077D58",
     "A125": "FECB077D86",
     "A126": "FECB077D87",
@@ -133,7 +133,7 @@ const batteryIdMap = {
     "A129": "FECB077D8E",
     "A130": "FECB077D91",
     "A131": "FECB0783EA",
-    "A132": "FECB077D71",
+    "A132": "FECB077D71", // *
     "A133": "",
     "A134": "",
     "A135": "",

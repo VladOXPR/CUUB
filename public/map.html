@@ -326,29 +326,8 @@
         zoom: 12
     });
 
-    // Station location data with static coordinates
-    const stationLocations = {
-        'DTN00872': {
-            address: 'LP Student Center, 1st Floor, Chicago, IL',
-            coordinates: [-87.65415, 41.92335]
-        },
-        'DTN00971': {
-            address: 'DePaul University Loop, Chicago, IL',
-            coordinates: [-87.6298, 41.8776]
-        },
-        'DTN00970': {
-            address: 'Theater School, 1st Floor, Chicago, IL',
-            coordinates: [-87.65875687443715, 41.92483761368347]
-        },
-        'BJH09881': {
-            address: 'Parlay Lincoln Park, Chicago, IL',
-            coordinates: [-87.65328, 41.92927]
-        },
-        'BJH09883': {
-            address: "Kelly's Pub, Chicago, IL",
-            coordinates: [-87.65298, 41.92158]
-        }
-    };
+    // Station location data - will be loaded from API
+    let stationLocations = {};
 
     let stations = [];
     let currentStation = null;
@@ -397,6 +376,30 @@
             if (statusAmountElement) {
                 statusAmountElement.textContent = calculateAmountPaid(borrowTime);
             }
+        }
+    }
+
+    // Load location data from API
+    async function loadLocationData() {
+        try {
+            const response = await fetch('/api/locations');
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            const locationData = await response.json();
+            
+            // Convert array to object keyed by ID
+            stationLocations = {};
+            locationData.forEach(location => {
+                stationLocations[location.id] = {
+                    address: location.address,
+                    coordinates: location.coordinates
+                };
+            });
+            
+            console.log('Loaded location data:', stationLocations);
+        } catch (error) {
+            console.error('Error loading location data:', error);
         }
     }
 
@@ -610,6 +613,9 @@
     }
 
     map.on('load', async () => {
+        // Load location data first
+        await loadLocationData();
+        
         // Fetch initial station data
         await fetchStationData();
 
