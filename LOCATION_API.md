@@ -3,6 +3,10 @@
 ## Overview
 The CUUB battery rental system now includes API endpoints for managing station locations. These endpoints require API key authentication.
 
+## Production Domain
+- **Production URL**: `https://battery.cuub.tech`
+- **Local Development**: `http://localhost:3000`
+
 ## Authentication
 - **API Key**: `cuubisgoated123`
 - **Header**: Include the API key in the request header as `x-api-key` or `api-key`
@@ -91,7 +95,7 @@ Removes a station location (authentication required).
 
 ## Usage Examples
 
-### Add a New Location
+### Add a New Location (Local Development)
 ```bash
 curl -X POST http://localhost:3000/api/locations \
   -H "Content-Type: application/json" \
@@ -104,15 +108,39 @@ curl -X POST http://localhost:3000/api/locations \
   }'
 ```
 
-### Remove a Location
+### Add a New Location (Production)
+```bash
+curl -X POST https://battery.cuub.tech/api/locations \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: cuubisgoated123" \
+  -d '{
+    "id": "NEW001",
+    "name": "New Battery Station",
+    "address": "123 Main St, Chicago, IL",
+    "coordinates": [-87.6298, 41.8781]
+  }'
+```
+
+### Remove a Location (Local Development)
 ```bash
 curl -X DELETE http://localhost:3000/api/locations/NEW001 \
   -H "x-api-key: cuubisgoated123"
 ```
 
-### Get All Locations
+### Remove a Location (Production)
+```bash
+curl -X DELETE https://battery.cuub.tech/api/locations/NEW001 \
+  -H "x-api-key: cuubisgoated123"
+```
+
+### Get All Locations (Local Development)
 ```bash
 curl http://localhost:3000/api/locations
+```
+
+### Get All Locations (Production)
+```bash
+curl https://battery.cuub.tech/api/locations
 ```
 
 ## Field Requirements
