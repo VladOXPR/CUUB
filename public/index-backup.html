@@ -64,7 +64,7 @@
         }
 
         .view-locations-btn:hover {
-            background-color: #007ACC;
+            background-color: #0099FF;
         }
 
         #batteryIdDisplay {
@@ -218,17 +218,7 @@
             animation: typewriter 3s steps(40, end) forwards;
         }
 
-        /* Map Styles */
-        #mapContainer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background-color: #000000;
-            z-index: 10000;
-            display: none;
-        }
+        /* Map Styles - Map is now on separate page (/map.html) */
 
         #map {
             width: 100%;
@@ -516,40 +506,7 @@
     </div>
 </div>
 
-<!-- Map Container -->
-<div id="mapContainer">
-    <button class="back-button" onclick="hideMap()">×</button>
-    <div id="map"></div>
-
-    <div id="bottomPopup" class="bottom-popup">
-        <div class="popup-header">
-        </div>
-        <div class="popup-content">
-            <div class="popup-left">
-                <div class="popup-title" id="popupTitle">Station Name</div>
-            </div>
-            <div class="popup-right">
-                <div class="availability-info-new">
-                    <div class="availability-item-new">
-                        <div class="availability-icon-container">
-                            <div class="availability-icon blue-dot"></div>
-                            <div class="availability-number-new" id="availableSlots">5</div>
-                        </div>
-                        <div class="availability-label-new">To Take</div>
-                    </div>
-                    <div class="availability-item-new">
-                        <div class="availability-icon-container">
-                            <div class="availability-icon gray-dot"></div>
-                            <div class="availability-number-new" id="occupiedSlots">8</div>
-                        </div>
-                        <div class="availability-label-new">To Return</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <button class="directions-btn" onclick="openDirections()">Get Directions</button>
-    </div>
-</div>
+<!-- Map is now on a separate page (/map.html) - no embedded map container needed -->
 
 
 <!-- Landing page content - shown when no battery ID -->
@@ -765,147 +722,11 @@
 <script>
     const { DateTime } = luxon;
     let borrowTime = null;
-    let map = null;
-    let currentStation = null;
-    let selectedStationIndex = -1;
     let statusUpdateInterval = null;
     let currentBatteryId = null;
     let isFirstLoad = true;
 
-    // DePaul University station locations - will be loaded from API
-    let stationLocations = {};
-
-    let stations = [];
-
-    // Load location data from API
-    async function loadLocationData() {
-        try {
-            const response = await fetch('/api/locations');
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const locationData = await response.json();
-            
-            // Convert array to object keyed by ID
-            stationLocations = {};
-            locationData.forEach(location => {
-                stationLocations[location.id] = {
-                    address: location.address,
-                    coordinates: location.coordinates
-                };
-            });
-            
-            console.log('Loaded location data:', stationLocations);
-        } catch (error) {
-            console.error('Error loading location data:', error);
-        }
-    }
-
-    async function fetchStationData() {
-        try {
-            const response = await fetch('/api/stations');
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const stationData = await response.json();
-
-            // Merge with location data
-            stations = stationData.map(station => ({
-                id: station.id,
-                name: station.name,
-                address: station.address,
-                coordinates: stationLocations[station.id]?.coordinates || [0, 0],
-                available: station.available,
-                occupied: station.occupied,
-                error: station.error
-            }));
-
-            console.log('Updated stations data:', stations);
-
-            // Update map if it exists
-            if (map && map.getSource('stations')) {
-                updateMapStations();
-            }
-
-            return stations;
-        } catch (error) {
-            console.error('Error fetching station data:', error);
-            // Fall back to default data if API fails
-            stations = [
-                {
-                    id: 'DTN00872',
-                    name: 'DePaul LP Student Center',
-                    address: 'LP Student Center, 1st Floor, Chicago, IL',
-                    coordinates: [-87.65415, 41.92335],
-                    available: 0,
-                    occupied: 0,
-                    error: true
-                },
-                {
-                    id: 'DTN00971',
-                    name: 'DePaul University Loop',
-                    address: 'Loop Student Center, 11th Floor, Chicago, IL',
-                    coordinates: [-87.6298, 41.8776],
-                    available: 0,
-                    occupied: 0,
-                    error: true
-                },
-                {
-                    id: 'DTN00970',
-                    name: 'DePaul Theater School',
-                    address: 'Theater School, 1st Floor, Chicago, IL',
-                    coordinates: [-87.65875687443715, 41.92483761368347],
-                    available: 0,
-                    occupied: 0,
-                    error: true
-                },
-                {
-                    id: 'BJH09881',
-                    name: 'DePaul University Parlay Lincoln Park',
-                    address: 'Parlay Lincoln Park, Chicago, IL',
-                    coordinates: [-87.65328, 41.92927],
-                    available: 0,
-                    occupied: 0,
-                    error: true
-                },
-                {
-                    id: 'BJH09883',
-                    name: 'Kelly\'s Pub',
-                    address: 'Kelly\'s Pub, Chicago, IL',
-                    coordinates: [-87.65298, 41.92158],
-                    available: 0,
-                    occupied: 0,
-                    error: true
-                }
-            ];
-            return stations;
-        }
-    }
-
-    function updateMapStations() {
-        if (!map || !map.getSource('stations')) return;
-
-        const stationFeatures = stations.map((station, index) => ({
-            'type': 'Feature',
-            'properties': {
-                'name': station.name,
-                'address': station.address,
-                'available': station.available,
-                'occupied': station.occupied,
-                'index': index,
-                'error': station.error
-            },
-            'geometry': {
-                'type': 'Point',
-                'coordinates': station.coordinates
-            }
-        }));
-
-        map.getSource('stations').setData({
-            'type': 'FeatureCollection',
-            'features': stationFeatures
-        });
-    }
+    // All location and station data fetching removed - map page handles this now
 
     function convertChinaToChicagoTime(chinaTimeStr) {
         return chinaTimeStr ? DateTime.fromISO(chinaTimeStr, { zone: "Asia/Shanghai" }).setZone("America/Chicago") : null;
@@ -963,22 +784,10 @@
     }
 
     function showRentalStatus() {
-        // Only show rental status window when map isvisible
-        if (borrowTime && document.getElementById('mapContainer').style.display === 'block') {
-            document.getElementById('rentalStatus').style.display = 'block';
-            const statusDurationElement = document.getElementById('statusDuration');
-            const statusAmountElement = document.getElementById('statusAmount');
-
-            if (statusDurationElement) {
-                statusDurationElement.textContent = getTimeElapsed(borrowTime);
-            }
-            if (statusAmountElement) {
-                statusAmountElement.textContent = calculateAmountPaid(borrowTime);
-            }
-
-            if (statusUpdateInterval) clearInterval(statusUpdateInterval);
-            statusUpdateInterval = setInterval(updateElapsedTime, 1000);
-        }
+        // Function kept for compatibility with script.js
+        // Rental status is now only shown on map page, not on battery page
+        // This function does nothing on the battery page since mapContainer was removed
+        console.log('showRentalStatus called - rental status only shown on map page');
     }
 
     function updateBatteryData(data) {
@@ -1323,306 +1132,21 @@
     }
 
     function showMap() {
-        document.getElementById('mapContainer').style.display = 'block';
-
-        if (!map) {
-            initializeMap();
+        // Store the current battery ID so map can show rental status
+        if (currentBatteryId) {
+            localStorage.setItem('currentBatteryId', currentBatteryId);
         }
-
-        // Show rental status window when map is opened
-        showRentalStatus();
+        // Redirect to the map page instead of showing embedded map
+        window.location.href = '/map.html';
     }
 
     function hideMap() {
-        document.getElementById('mapContainer').style.display = 'none';
-        closeBottomPopup();
-
-        // Hide rental status window when map is closed
-        document.getElementById('rentalStatus').style.display = 'none';
-        if (statusUpdateInterval) {
-            clearInterval(statusUpdateInterval);
-            statusUpdateInterval = null;
-        }
+        // This function is no longer used since we redirect to /map.html
+        // Kept for backwards compatibility
     }
 
-    function initializeMap() {
-        mapboxgl.accessToken = 'pk.eyJ1IjoidmxhZHZhbGNoa291IiwiYSI6ImNtYzlhemFpZTF2MXUya29sNzM4OXhuZjYifQ.jrfH07QPTw_XfnmXXv42Pw';
-
-        map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: [-87.64, 41.90],
-            zoom: 12            });
-
-        map.on('load', async () => {
-            // Load location data first
-            await loadLocationData();
-            
-            // Fetch initial station data
-            await fetchStationData();
-
-            map.addSource('stations', {
-                'type': 'geojson',
-                'data': {
-                    'type': 'FeatureCollection',
-                    'features': stations.map((station, index) => ({
-                        'type': 'Feature',
-                        'properties': {
-                            'name': station.name,
-                            'address': station.address,
-                            'available': station.available,
-                            'occupied': station.occupied,
-                            'index': index,
-                            'error': station.error
-                        },
-                        'geometry': {
-                            'type': 'Point',
-                            'coordinates': station.coordinates
-                        }
-                    }))
-                },
-                cluster: true,
-                clusterMaxZoom: 14,
-                clusterRadius: 50
-            });
-
-            map.addLayer({
-                'id': 'clusters',
-                'type': 'circle',
-                'source': 'stations',
-                'filter': ['has', 'point_count'],
-                'paint': {
-                    'circle-radius': [
-                        'step',
-                        ['get', 'point_count'],
-                        15,
-                        3, 20,
-                        5, 25
-                    ],
-                    'circle-color': '#009FFF'
-                }
-            });
-
-            map.addLayer({
-                'id': 'cluster-count',
-                'type': 'symbol',
-                'source': 'stations',
-                'filter': ['has', 'point_count'],
-                'layout': {
-                    'text-field': '{point_count_abbreviated}',
-                    'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-                    'text-size': 14
-                },
-                'paint': {
-                    'text-color': '#ffffff'
-                }
-            });
-
-            map.addLayer({
-                'id': 'stations-layer',
-                'type': 'circle',
-                'source': 'stations',
-                'filter': ['!', ['has', 'point_count']],
-                'paint': {
-                    'circle-radius': 12,
-                    'circle-color': '#009FFF'
-                }
-            });
-
-            map.addLayer({
-                'id': 'stations-selected',
-                'type': 'circle',
-                'source': 'stations',
-                'filter': ['!', ['has', 'point_count']],
-                'paint': {
-                    'circle-radius': 20,
-                    'circle-color': '#009FFF',
-                    'circle-stroke-width': 3,
-                    'circle-stroke-color': '#FFFFFF',
-                    'circle-opacity': 0,
-                    'circle-stroke-opacity': 0
-                }
-            });
-
-            map.addLayer({
-                'id': 'stations-hover',
-                'type': 'circle',
-                'source': 'stations',
-                'paint': {
-                    'circle-radius': 18,
-                    'circle-color': '#009FFF',
-                    'circle-opacity': 0
-                },
-                'filter': ['==', 'index', -1]
-            });
-
-            map.on('click', 'clusters', (e) => {
-                try {
-                    const features = map.queryRenderedFeatures(e.point, {
-                        layers: ['clusters']
-                    });
-
-                    if (features && features.length > 0 && features[0] && features[0].properties) {
-                        const clusterId = features[0].properties.cluster_id;
-                        const geometry = features[0].geometry;
-                        const coordinates = geometry ? geometry.coordinates : null;
-
-                        if (coordinates && Array.isArray(coordinates) && coordinates.length >= 2) {
-                            map.getSource('stations').getClusterExpansionZoom(
-                                clusterId,
-                                (err, zoom) => {
-                                    if (!err) {
-                                        map.easeTo({
-                                            center: coordinates,
-                                            zoom: zoom
-                                        });
-                                    }
-                                }
-                            );
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error handling cluster click:', error);
-                }
-            });
-
-            map.on('click', 'stations-layer', (e) => {
-                try {
-                    const features = map.queryRenderedFeatures(e.point, {
-                        layers: ['stations-layer']
-                    });
-
-                    if (features && features.length > 0 && features[0]) {
-                        const feature = features[0];
-                        const properties = feature.properties || {};
-                        const geometry = feature.geometry || {};
-                        const coordinates = geometry.coordinates;
-
-                        if (!coordinates || !Array.isArray(coordinates) || coordinates.length < 2) {
-                            console.error('Invalid coordinates:', coordinates);
-                            return;
-                        }
-
-                        const lng = parseFloat(coordinates[0]);
-                        const lat = parseFloat(coordinates[1]);
-                        if (isNaN(lng) || isNaN(lat)) {
-                            console.error('Invalid coordinate values:', coordinates);
-                            return;
-                        }
-
-                        const station = {
-                            name: properties.name || 'Unknown Station',
-                            address: properties.address || 'Unknown Address',
-                            available: properties.available || 0,
-                            occupied: properties.occupied || 0,
-                            coordinates: [lng, lat]
-                        };
-
-                        selectedStationIndex = properties.index !== undefined ? properties.index : -1;
-
-                        map.setFilter('stations-selected', ['==', 'index', selectedStationIndex]);
-                        map.setPaintProperty('stations-selected', 'circle-opacity', 1.0);
-                        map.setPaintProperty('stations-selected', 'circle-stroke-opacity', 1);
-
-                        showBottomPopup(station);
-                    }
-                } catch (error) {
-                    console.error('Error handling station click:', error);
-                }
-            });
-
-            map.on('mouseenter', 'stations-layer', (e) => {
-                try {
-                    if (e.features && e.features.length > 0 && e.features[0]) {
-                        const feature = e.features[0];
-                        const properties = feature.properties || {};
-
-                        map.getCanvas().style.cursor = 'pointer';
-                        const index = properties.index || 0;
-
-                        map.setFilter('stations-hover', ['all', ['!', ['has', 'point_count']], ['==', 'index', index]]);
-                        map.setPaintProperty('stations-hover', 'circle-opacity', 1);
-                    }
-                } catch (error) {
-                    console.error('Error handling station hover:', error);
-                }
-            });
-
-            map.on('mouseleave', 'stations-layer', (e) => {
-                map.getCanvas().style.cursor = '';
-                map.setPaintProperty('stations-hover', 'circle-opacity', 0);
-            });
-
-            map.on('mouseenter', 'clusters', () => {
-                map.getCanvas().style.cursor = 'pointer';
-            });
-
-            map.on('mouseleave', 'clusters', () => {
-                map.getCanvas().style.cursor = '';
-            });
-
-            map.addControl(new mapboxgl.NavigationControl());
-            map.addControl(
-                new mapboxgl.GeolocateControl({
-                    positionOptions: {
-                        enableHighAccuracy: true
-                    },
-                    trackUserLocation: true,
-                    showUserHeading: true
-                })
-            );
-
-            // Close popup when clicking on empty map areas
-            map.on('click', (e) => {
-                // Check if the click was on a station or cluster
-                const features = map.queryRenderedFeatures(e.point, {
-                    layers: ['stations-layer', 'clusters']
-                });
-
-                // If no features were clicked, close the popup
-                if (!features || features.length === 0) {
-                    closeBottomPopup();
-                }
-            });
-        });
-    }
-
-    function showBottomPopup(station) {
-        currentStation = station;
-        document.getElementById('popupTitle').textContent = station.name;
-        document.getElementById('availableSlots').textContent = station.occupied;
-        document.getElementById('occupiedSlots').textContent = station.available;
-        document.getElementById('bottomPopup').classList.add('show');
-    }
-
-    function closeBottomPopup() {
-        document.getElementById('bottomPopup').classList.remove('show');
-        currentStation = null;
-
-        selectedStationIndex = -1;
-        if (map) {
-            map.setFilter('stations-selected', ['==', 'index', -1]);
-            map.setPaintProperty('stations-selected', 'circle-opacity', 0);
-            map.setPaintProperty('stations-selected', 'circle-stroke-opacity', 0);
-        }
-    }
-
-    function openDirections() {
-        if (!currentStation) return;
-
-        const lat = currentStation.coordinates[1];
-        const lng = currentStation.coordinates[0];
-
-        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-
-        if (/iPad|iPhone|iPod/.test(userAgent)) {
-            window.open(`maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`);
-        } else if (/android/i.test(userAgent)) {
-            window.open(`geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(currentStation.name)})`);
-        } else {
-            window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
-        }
-    }
+    // Map initialization removed - map is now on /map.html
+    // All map-related code removed - use /map.html for map functionality
 
     function showGlobalSupportButton() {
         const globalSupportBtn = document.getElementById('globalSupportBtn');
@@ -1731,14 +1255,6 @@
         document.getElementById('buttons-container').style.display = 'block';
         
         setInterval(updateElapsedTime, 1000);
-        setInterval(fetchBatteryData, 10000);
-
-        // Load location data first, then fetch station data
-        await loadLocationData();
-        await fetchStationData();
-
-        // Update station data every 30 seconds
-        setInterval(fetchStationData, 30000);
 
         // Set up battery ID digit inputs
         setupBatteryIdInputs();

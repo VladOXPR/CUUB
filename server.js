@@ -8,6 +8,7 @@ const fs = require('fs');
 const batteryIdMap = require('./public/batteryIdMap');
 const { locationManager } = require('./locations.js');
 const compression = require('compression');
+const chargenowApi = require('./chargenowApi');
 
 const app = express();
 
@@ -203,45 +204,24 @@ app.get('/api/stations', async (req, res) => {
     }
 
     const stationIds = locationManager.getAllIds();
-    const stationPromises = stationIds.map(async (id) => {
-        try {
-            const response = await fetch(`https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=${id}`, {
-                method: 'GET',
-                headers: {
-                    "Authorization": "Basic VmxhZFZhbGNoa292OlZWMTIxMg==",
-                    "Content-Type": "application/json"
-                },
-                timeout: 10000,
-                redirect: 'follow'
-            });
-
-            if (!response.ok) {
-                console.error(`Failed to fetch station ${id}: ${response.status}`);
-                return { id, error: true };
-            }
-
-            const data = await response.json();
-            
-            // Get station info from centralized location data
-            const stationInfo = locationManager.getById(id);
-
-            return {
-                id,
-                name: stationInfo?.name || `Station ${id}`,
-                coordinates: stationInfo?.coordinates || [0, 0],
-                available: data.data?.cabinet?.emptySlots || 0,
-                occupied: data.data?.cabinet?.busySlots || 0,
-                error: false
-            };
-
-        } catch (error) {
-            console.error(`Error fetching station ${id}:`, error);
-            return { id, error: true };
-        }
-    });
 
     try {
-        const stations = await Promise.all(stationPromises);
+        // Use the ChargeNow API module to fetch station data
+        const stationsData = await chargenowApi.fetchMultipleStations(stationIds);
+        
+        // Merge with location data
+        const stations = stationsData.map(stationData => {
+            const stationInfo = locationManager.getById(stationData.id);
+            
+            return {
+                id: stationData.id,
+                name: stationInfo?.name || `Station ${stationData.id}`,
+                coordinates: stationInfo?.coordinates || [0, 0],
+                available: stationData.available || 0,
+                occupied: stationData.occupied || 0,
+                error: stationData.error || false
+            };
+        });
         
         // Cache the result
         apiCache.set(cacheKey, {
@@ -363,37 +343,18 @@ app.get('/api/battery/:batteryId', validateBatteryId, async (req, res) => {
     }
 
     try {
-        const response = await fetch("https://developer.chargenow.top/cdb-open-api/v1/order/list?page=1&limit=100", {
-            method: 'GET',
-            headers: {
-                "Authorization": "Basic VmxhZFZhbGNoa292OlZWMTIxMg==",
-                "Content-Type": "application/json"
-            },
-            timeout: 10000,
-            redirect: 'follow'
-        });
-
-        if (!response.ok) {
-            throw new Error(`API request failed with status: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        if (!result.page || !result.page.records) {
-            throw new Error("Invalid API response structure");
-        }
-
-        // Find record matching real battery ID
-        const matchingRecord = result.page.records.find(record => record.pBatteryid === realBatteryId);
-        if (matchingRecord) {
+        // Use the ChargeNow API module to find battery
+        const result = await chargenowApi.findBatteryById(realBatteryId);
+        
+        if (result.success) {
             // Cache the result
             apiCache.set(cacheKey, {
-                data: matchingRecord,
+                data: result.data,
                 timestamp: Date.now()
             });
-            res.json(matchingRecord);
+            res.json(result.data);
         } else {
-            res.status(404).json({ error: "Battery not found in API data" });
+            res.status(404).json({ error: result.error });
         }
     } catch (error) {
         console.error("Error fetching battery data:", error);
@@ -473,18 +434,96 @@ app.use('*', (req, res) => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
     console.log('SIGTERM received, shutting down gracefully');
+    
+    // Stop background polling
+    if (stationPollingStop) stationPollingStop();
+    if (batteryPollingStop) batteryPollingStop();
+    
     saveAnalyticsData();
     process.exit(0);
 });
 
 process.on('SIGINT', () => {
     console.log('SIGINT received, shutting down gracefully');
+    
+    // Stop background polling
+    if (stationPollingStop) stationPollingStop();
+    if (batteryPollingStop) batteryPollingStop();
+    
     saveAnalyticsData();
     process.exit(0);
 });
 
 // Load analytics data on startup
 loadAnalyticsData();
+
+// Background polling for ChargeNow API
+let stationPollingStop = null;
+let batteryPollingStop = null;
+
+// Start background polling for station data
+const startBackgroundPolling = () => {
+    console.log('Starting background polling for ChargeNow API...');
+    
+    const stationIds = locationManager.getAllIds();
+    
+    // Poll station data every 30 seconds
+    stationPollingStop = chargenowApi.pollStationData(
+        stationIds,
+        30000, // 30 seconds
+        (error, data) => {
+            if (error) {
+                console.error('Error in station polling:', error.message);
+            } else {
+                console.log(`Background: Fetched data for ${data.length} stations`);
+                // Update cache with fresh data
+                const stations = data.map(stationData => {
+                    const stationInfo = locationManager.getById(stationData.id);
+                    return {
+                        id: stationData.id,
+                        name: stationInfo?.name || `Station ${stationData.id}`,
+                        coordinates: stationInfo?.coordinates || [0, 0],
+                        available: stationData.available || 0,
+                        occupied: stationData.occupied || 0,
+                        error: stationData.error || false
+                    };
+                });
+                
+                apiCache.set('stations', {
+                    data: stations,
+                    timestamp: Date.now()
+                });
+            }
+        }
+    );
+    
+    // Poll battery orders every 60 seconds
+    batteryPollingStop = chargenowApi.pollBatteryOrders(
+        60000, // 60 seconds
+        (error, data) => {
+            if (error) {
+                console.error('Error in battery orders polling:', error.message);
+            } else if (data.success) {
+                console.log(`Background: Fetched ${data.data.length} battery orders`);
+                // Battery data is fetched on-demand, so we don't cache all of it
+                // But we can perform any background processing here if needed
+            }
+        }
+    );
+    
+    console.log('Background polling started successfully');
+};
+
+// Check API health on startup
+chargenowApi.checkApiHealth().then(isHealthy => {
+    if (isHealthy) {
+        console.log('ChargeNow API is healthy');
+        startBackgroundPolling();
+    } else {
+        console.warn('ChargeNow API health check failed, will retry polling in 30 seconds');
+        setTimeout(startBackgroundPolling, 30000);
+    }
+});
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, '0.0.0.0', () => {

@@ -76,15 +76,56 @@
             bottom: 10px;
             left: 10px;
             right: 10px;
-            background-color: #000000;
+            background: rgba(0, 0, 0, 1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             color: #FFFFFF;
             padding: 20px;
-            border-radius: 20px;
-            border: 2px solid #333333;
+            border-radius: 35px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
             z-index: 1001;
             transform: translateY(calc(100% + 50px));
             transition: transform 0.3s ease-in-out;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 0 20px 10px rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .bottom-popup::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.8),
+                transparent
+            );
+        }
+
+        .bottom-popup::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.8),
+                transparent,
+                rgba(255, 255, 255, 0.3)
+            );
+        }
+
+        .bottom-popup.show {
+            transform: translateY(0);
         }
 
         @media (min-width: 480px) {
@@ -98,10 +139,6 @@
             .bottom-popup.show {
                 transform: translateX(-50%) translateY(0);
             }
-        }
-
-        .bottom-popup.show {
-            transform: translateY(0);
         }
 
         .popup-header {
@@ -266,7 +303,7 @@
     </style>
 </head>
 <body>
-<button class="back-button" onclick="window.location.href='/'">×</button>
+<button class="back-button" onclick="goBack()">×</button>
 
 <!-- Rental Status Window -->
 <div id="rentalStatus" class="rental-status-window" style="display: none;">
@@ -315,6 +352,15 @@
 
 <script>
     const { DateTime } = luxon;
+
+    // Back button function - goes to previous page or home
+    function goBack() {
+        if (document.referrer && document.referrer !== window.location.href) {
+            window.history.back();
+        } else {
+            window.location.href = '/';
+        }
+    }
 
     // Replace this with your actual Mapbox access token from mapbox.com
     mapboxgl.accessToken = 'pk.eyJ1IjoidmxhZHZhbGNoa291IiwiYSI6ImNtYzlhemFpZTF2MXUya29sNzM4OXhuZjYifQ.jrfH07QPTw_XfnmXXv42Pw';
@@ -671,8 +717,8 @@
             'filter': ['has', 'point_count'],
             'layout': {
                 'text-field': '{point_count_abbreviated}',
-                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-                'text-size': 14
+                'text-font': ['DIN Pro Black', 'Arial Unicode MS Bold'],
+                'text-size': 18
             },
             'paint': {
                 'text-color': '#ffffff'

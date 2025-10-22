@@ -1,5 +1,191 @@
 Analytics data loaded from database
-Server running at http://0.0.0.0:3000
-Environment: development
-SIGTERM received, shutting down gracefully
-Analytics data saved to database
+Server error: Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at doListen (node:net:2109:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:83:21) {
+  code: 'EADDRINUSE',
+  errno: -48,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+ChargeNow API is healthy
+Starting background polling for ChargeNow API...
+Starting station polling every 30000ms for 5 stations
+Starting battery orders polling every 60000ms
+Background polling started successfully
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Error fetching battery orders: network timeout at: https://developer.chargenow.top/cdb-open-api/v1/order/list?page=1&limit=100
+Error fetching station DTN00872: network timeout at: https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=DTN00872
+Error fetching station DTN00971: network timeout at: https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=DTN00971
+Error fetching station DTN00970: network timeout at: https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=DTN00970
+Error fetching station BJH09881: network timeout at: https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=BJH09881
+Error fetching station BJH09883: network timeout at: https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=BJH09883
+Background: Fetched data for 5 stations
+Error fetching station DTN00872: request to https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=DTN00872 failed, reason: getaddrinfo ENOTFOUND developer.chargenow.top
+Error fetching station DTN00971: request to https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=DTN00971 failed, reason: getaddrinfo ENOTFOUND developer.chargenow.top
+Error fetching station DTN00970: request to https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=DTN00970 failed, reason: getaddrinfo ENOTFOUND developer.chargenow.top
+Error fetching station BJH09881: request to https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=BJH09881 failed, reason: getaddrinfo ENOTFOUND developer.chargenow.top
+Error fetching station BJH09883: request to https://developer.chargenow.top/cdb-open-api/v1/rent/cabinet/query?deviceId=BJH09883 failed, reason: getaddrinfo ENOTFOUND developer.chargenow.top
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
+Background: Fetched data for 5 stations
+Background: Fetched 100 battery orders
+Background: Fetched data for 5 stations
