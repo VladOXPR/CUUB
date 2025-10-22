@@ -353,12 +353,30 @@
 <script>
     const { DateTime } = luxon;
 
-    // Back button function - goes to previous page or home
+    // Back button function - smart navigation
     function goBack() {
-        if (document.referrer && document.referrer !== window.location.href) {
-            window.history.back();
+        // Check if there's history in the current session
+        if (window.history.length > 1 && document.referrer) {
+            const referrerUrl = new URL(document.referrer);
+            const currentUrl = new URL(window.location.href);
+            
+            // If coming from the same domain, go back
+            if (referrerUrl.hostname === currentUrl.hostname) {
+                window.history.back();
+            } else {
+                // Coming from external site, close the tab
+                window.close();
+                // If close doesn't work (popup blocker), go home
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 100);
+            }
         } else {
-            window.location.href = '/';
+            // No referrer, try to close tab or go home
+            window.close();
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 100);
         }
     }
 
