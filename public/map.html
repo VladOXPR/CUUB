@@ -327,6 +327,10 @@
     <div class="popup-content">
         <div class="popup-left">
             <div class="popup-title" id="popupTitle">Station Name</div>
+            <div id="hoursDisplay" style="font-size: 14px; color: #CCCCCC; margin-top: 8px;">
+                <span id="openStatus"></span>
+                <span id="todayHours"></span>
+            </div>
         </div>
         <div class="popup-right">
             <div class="availability-info-new">
@@ -462,7 +466,9 @@
                 id: station.id,
                 name: station.name,
                 address: station.address,
-                coordinates: stationLocations[station.id]?.coordinates || [0, 0],
+                coordinates: stationLocations[station.id]?.coordinates || station.coordinates || [0, 0],
+                hours: station.hours || null,
+                isOpen: station.isOpen !== undefined ? station.isOpen : true,
                 available: station.available,
                 occupied: station.occupied,
                 error: station.error
@@ -541,7 +547,9 @@
                 'available': station.available,
                 'occupied': station.occupied,
                 'index': index,
-                'error': station.error
+                'error': station.error,
+                'isOpen': station.isOpen !== undefined ? station.isOpen : true,
+                'hours': JSON.stringify(station.hours || {})
             },
             'geometry': {
                 'type': 'Point',
@@ -560,6 +568,36 @@
         document.getElementById('popupTitle').textContent = station.name;
         document.getElementById('availableSlots').textContent = station.occupied;
         document.getElementById('occupiedSlots').textContent = station.available;
+        
+        // Display opening hours
+        const openStatusEl = document.getElementById('openStatus');
+        const todayHoursEl = document.getElementById('todayHours');
+        
+        if (station.hours && station.isOpen !== undefined) {
+            const now = new Date();
+            const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const today = dayNames[now.getDay()];
+            const todayHours = station.hours[today];
+            
+            if (todayHours) {
+                // Format hours display
+                todayHoursEl.textContent = ` ${todayHours.open} - ${todayHours.close}`;
+                
+                // Show open/closed status
+                if (station.isOpen) {
+                    openStatusEl.innerHTML = '<span style="color: #4CAF50; font-weight: bold;">● Open</span> ·';
+                } else {
+                    openStatusEl.innerHTML = '<span style="color: #F44336; font-weight: bold;">● Closed</span> ·';
+                }
+            } else {
+                openStatusEl.textContent = '';
+                todayHoursEl.textContent = 'Hours not available';
+            }
+        } else {
+            openStatusEl.textContent = '';
+            todayHoursEl.textContent = '';
+        }
+        
         document.getElementById('bottomPopup').classList.add('show');
     }
 
@@ -678,7 +716,9 @@
                         'available': station.available,
                         'occupied': station.occupied,
                         'index': index,
-                        'error': station.error
+                        'error': station.error,
+                        'isOpen': station.isOpen !== undefined ? station.isOpen : true,
+                        'hours': JSON.stringify(station.hours || {})
                     },
                     'geometry': {
                         'type': 'Point',
@@ -733,7 +773,12 @@
             'filter': ['!', ['has', 'point_count']],
             'paint': {
                 'circle-radius': 12,
-                'circle-color': '#009FFF'
+                'circle-color': [
+                    'case',
+                    ['get', 'isOpen'],
+                    '#009FFF',  // Blue when open
+                    '#808080'   // Gray when closed
+                ]
             }
         });
 
@@ -745,7 +790,12 @@
             'filter': ['!', ['has', 'point_count']],
             'paint': {
                 'circle-radius': 20,
-                'circle-color': '#009FFF',
+                'circle-color': [
+                    'case',
+                    ['get', 'isOpen'],
+                    '#009FFF',  // Blue when open
+                    '#808080'   // Gray when closed
+                ],
                 'circle-stroke-width': 3,
                 'circle-stroke-color': '#FFFFFF',
                 'circle-opacity': 0,
@@ -760,7 +810,12 @@
             'source': 'stations',
             'paint': {
                 'circle-radius': 18,
-                'circle-color': '#009FFF',
+                'circle-color': [
+                    'case',
+                    ['get', 'isOpen'],
+                    '#009FFF',  // Blue when open
+                    '#808080'   // Gray when closed
+                ],
                 'circle-opacity': 0
             },
             'filter': ['==', 'index', -1]
@@ -829,7 +884,9 @@
                         address: properties.address || 'Unknown Address',
                         available: properties.available || 0,
                         occupied: properties.occupied || 0,
-                        coordinates: [lng, lat]
+                        coordinates: [lng, lat],
+                        hours: properties.hours ? JSON.parse(properties.hours) : null,
+                        isOpen: properties.isOpen !== undefined ? properties.isOpen : true
                     };
 
                     // Clear previous selection

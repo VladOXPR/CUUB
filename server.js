@@ -216,7 +216,10 @@ app.get('/api/stations', async (req, res) => {
             return {
                 id: stationData.id,
                 name: stationInfo?.name || `Station ${stationData.id}`,
+                address: stationInfo?.address || '',
                 coordinates: stationInfo?.coordinates || [0, 0],
+                hours: stationInfo?.hours || null,
+                isOpen: locationManager.isOpen(stationData.id),
                 available: stationData.available || 0,
                 occupied: stationData.occupied || 0,
                 error: stationData.error || false
@@ -248,7 +251,7 @@ app.get('/api/admin/stations', (req, res) => {
 
 app.post('/api/admin/stations', (req, res) => {
     try {
-        const { id, name, address, coordinates } = req.body;
+        const { id, name, address, coordinates, hours } = req.body;
         
         // Validate required fields
         if (!id || !name || !address || !coordinates) {
@@ -266,7 +269,10 @@ app.post('/api/admin/stations', (req, res) => {
         }
         
         // Add the new station
-        locationManager.add(id, { name, address, coordinates });
+        const stationData = { name, address, coordinates };
+        if (hours) stationData.hours = hours;
+        
+        locationManager.add(id, stationData);
         
         res.status(201).json({ 
             message: 'Station added successfully', 
@@ -281,7 +287,7 @@ app.post('/api/admin/stations', (req, res) => {
 app.put('/api/admin/stations/:id', (req, res) => {
     try {
         const { id } = req.params;
-        const { name, address, coordinates } = req.body;
+        const { name, address, coordinates, hours } = req.body;
         
         // Check if station exists
         if (!locationManager.getById(id)) {
@@ -298,6 +304,7 @@ app.put('/api/admin/stations/:id', (req, res) => {
         if (name) updateData.name = name;
         if (address) updateData.address = address;
         if (coordinates) updateData.coordinates = coordinates;
+        if (hours) updateData.hours = hours;
         
         locationManager.update(id, updateData);
         
@@ -482,7 +489,10 @@ const startBackgroundPolling = () => {
                     return {
                         id: stationData.id,
                         name: stationInfo?.name || `Station ${stationData.id}`,
+                        address: stationInfo?.address || '',
                         coordinates: stationInfo?.coordinates || [0, 0],
+                        hours: stationInfo?.hours || null,
+                        isOpen: locationManager.isOpen(stationData.id),
                         available: stationData.available || 0,
                         occupied: stationData.occupied || 0,
                         error: stationData.error || false
