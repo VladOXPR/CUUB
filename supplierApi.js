@@ -1,8 +1,9 @@
 /**
- * ChargeNow API Service
+ * Supplier API Service
  * 
- * This module handles all interactions with the ChargeNow API
- * Base URL: https://developer.chargenow.top/cdb-open-api/v1
+ * This module handles all interactions with supplier APIs including:
+ * - ChargeNow API (Base URL: https://developer.chargenow.top/cdb-open-api/v1)
+ * - Energo API (Base URL: https://backend.energo.vip/api)
  */
 
 const fetch = require('node-fetch');
@@ -11,6 +12,11 @@ const fetch = require('node-fetch');
 const CHARGENOW_API_BASE = 'https://developer.chargenow.top/cdb-open-api/v1';
 const CHARGENOW_AUTH = 'Basic VmxhZFZhbGNoa292OlZWMTIxMg=='; // Base64 encoded credentials
 const DEFAULT_TIMEOUT = 10000; // 10 seconds
+
+// Energo API Configuration
+const ENERGO_API_BASE = 'https://backend.energo.vip/api';
+const ENERGO_AUTH_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJqdGkiOiI3NmE3ZDU4NTRhMDE0OThhYTFlMDU2NzA5ODA5ZDRiYiIsInVzZXIiOiJjdWJVU0EyMDI1IiwiaXNBcGlUb2tlbiI6ZmFsc2UsInN1YiI6ImN1YlVTQTIwMjUiLCJBUElLRVkiOiJidXpOTEQyMDI0IiwiZXhwIjoxNzY2OTcxMjUwfQ.3vjEIS5qVF-uN7uJ5xkff26mn1G6NobnCJsGAo1AZhOJ122KqZIhg_MAPGcPg9vSUT7FEFCooxBpv2ovmq2OzA';
+const ENERGO_OID = '3526';
 
 /**
  * Common headers for all ChargeNow API requests
@@ -115,34 +121,86 @@ async function fetchBatteryOrders(page = 1, limit = 100) {
 }
 
 /**
- * Find a specific battery by its ID in the order list
+ * Find a specific battery by its ID using the Energo API
  * 
- * @param {string} batteryId - The battery ID to search for
- * @returns {Promise<Object|null>} Battery data or null if not found
+ * @param {string} batteryId - The battery ID to search for (e.g., 'RL3D52000012')
+ * @returns {Promise<Object>} Battery data with pBorrowtime and pGhtime fields
  */
 async function findBatteryById(batteryId) {
     try {
-        const ordersResult = await fetchBatteryOrders(1, 100);
+        // Build the Energo API URL
+        const url = `${ENERGO_API_BASE}/order?size=0&sort=id%2Cdesc&deviceid=${encodeURIComponent(batteryId)}`;
         
-        if (!ordersResult.success) {
-            throw new Error(ordersResult.error);
+        console.log(`Calling Energo API for battery: ${batteryId}`);
+        console.log(`URL: ${url}`);
+        
+        // Make the API request
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${ENERGO_AUTH_TOKEN}`,
+                'Referer': 'https://backend.energo.vip/order/lease-order',
+                'oid': ENERGO_OID,
+                'Content-Type': 'application/json'
+            },
+            timeout: DEFAULT_TIMEOUT,
+            redirect: 'follow'
+        });
+
+        console.log(`Energo API response status: ${response.status}`);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Energo API error response: ${errorText}`);
+            throw new Error(`Energo API request failed with status: ${response.status}`);
         }
 
-        const matchingRecord = ordersResult.data.find(
-            record => record.pBatteryid === batteryId
-        );
+        const result = await response.json();
+        console.log(`Energo API response:`, JSON.stringify(result, null, 2));
 
-        if (matchingRecord) {
-            return {
-                success: true,
-                data: matchingRecord
-            };
-        } else {
+        // Check if we have any orders
+        if (!result.content || result.content.length === 0) {
+            console.log(`No orders found for battery ${batteryId}`);
             return {
                 success: false,
                 error: "Battery not found in API data"
             };
         }
+
+        // Get the most recent order (first in the sorted list)
+        const order = result.content[0];
+        
+        // Extract starttime and returnTime
+        const starttime = order.starttime; // Epoch timestamp in milliseconds
+        const returnTime = order.returnTime; // Epoch timestamp in milliseconds, 0 if not returned
+
+        console.log(`Battery ${batteryId} - starttime: ${starttime}, returnTime: ${returnTime}`);
+
+        // Convert epoch timestamps to ISO format strings
+        // The frontend expects ISO strings that it will interpret as China timezone
+        // Epoch timestamps are timezone-agnostic, so we convert to ISO and let frontend handle timezone
+        const pBorrowtime = starttime ? new Date(starttime).toISOString() : null;
+        
+        // Check if battery is returned: returnTime must exist AND not be 0
+        // If returnTime is 0, battery hasn't been returned yet (still rented)
+        const isReturned = returnTime !== undefined && returnTime !== null && returnTime !== 0;
+        const pGhtime = isReturned ? new Date(returnTime).toISOString() : null;
+        
+        console.log(`Battery ${batteryId} - isReturned: ${isReturned}, pGhtime: ${pGhtime}`);
+
+        // Return data in the format expected by the frontend
+        return {
+            success: true,
+            data: {
+                pBatteryid: batteryId,
+                pBorrowtime: pBorrowtime,
+                pGhtime: pGhtime,
+                // Include additional order data for reference
+                orderNo: order.orderNo,
+                status: order.status,
+                deviceid: order.deviceid
+            }
+        };
 
     } catch (error) {
         console.error(`Error finding battery ${batteryId}:`, error.message);
@@ -258,6 +316,57 @@ async function checkApiHealth() {
     }
 }
 
+/**
+ * Start background polling to keep Energo API token alive
+ * Sends a request every minute to prevent token expiration
+ * 
+ * @param {string} batteryId - The battery ID to use for keep-alive requests (default: 'RL3D52000012')
+ * @param {number} intervalMs - Polling interval in milliseconds (default: 60000 = 1 minute)
+ * @returns {Function} Stop function to halt polling
+ */
+function startEnergoTokenKeepAlive(batteryId = 'RL3D52000012', intervalMs = 60000) {
+    console.log(`[Token Keep-Alive] Starting Energo API token keep-alive for battery ${batteryId} (interval: ${intervalMs}ms)`);
+    
+    // Function to send keep-alive request
+    const sendKeepAliveRequest = async () => {
+        try {
+            const url = `${ENERGO_API_BASE}/order?size=0&sort=id%2Cdesc&deviceid=${encodeURIComponent(batteryId)}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${ENERGO_AUTH_TOKEN}`,
+                    'Referer': 'https://backend.energo.vip/order/lease-order',
+                    'oid': ENERGO_OID,
+                    'Content-Type': 'application/json'
+                },
+                timeout: DEFAULT_TIMEOUT,
+                redirect: 'follow'
+            });
+
+            if (response.ok) {
+                console.log(`[Token Keep-Alive] Energo API token is active (status: ${response.status})`);
+            } else {
+                console.warn(`[Token Keep-Alive] Energo API request returned status: ${response.status}`);
+            }
+        } catch (error) {
+            console.error(`[Token Keep-Alive] Error keeping Energo token alive:`, error.message);
+        }
+    };
+    
+    // Initial request
+    sendKeepAliveRequest();
+    
+    // Set up interval
+    const intervalId = setInterval(sendKeepAliveRequest, intervalMs);
+    
+    // Return function to stop polling
+    return () => {
+        console.log('[Token Keep-Alive] Stopping Energo API token keep-alive');
+        clearInterval(intervalId);
+    };
+}
+
 // Export all functions
 module.exports = {
     // Single operations
@@ -274,7 +383,9 @@ module.exports = {
     
     // Utilities
     checkApiHealth,
+    startEnergoTokenKeepAlive,
     
     // Constants (if needed externally)
     CHARGENOW_API_BASE
 };
+

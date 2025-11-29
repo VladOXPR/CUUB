@@ -8,7 +8,7 @@ const fs = require('fs');
 const batteryIdMap = require('./public/batteryIdMap');
 const { locationManager } = require('./locations.js');
 const compression = require('compression');
-const chargenowApi = require('./chargenowApi');
+const supplierApi = require('./supplierApi');
 
 const app = express();
 
@@ -186,8 +186,12 @@ app.get('/:batteryId', (req, res, next) => {
 // Input validation middleware
 const validateBatteryId = (req, res, next) => {
     const { batteryId } = req.params;
-    if (!batteryId || !batteryIdMap[batteryId]) {
+    if (!batteryId || !(batteryId in batteryIdMap)) {
         return res.status(400).json({ error: "Invalid battery ID" });
+    }
+    const realBatteryId = batteryIdMap[batteryId];
+    if (!realBatteryId || realBatteryId.trim() === '') {
+        return res.status(400).json({ error: "Battery ID not configured" });
     }
     next();
 };
@@ -207,7 +211,7 @@ app.get('/api/stations', async (req, res) => {
 
     try {
         // Use the ChargeNow API module to fetch station data
-        const stationsData = await chargenowApi.fetchMultipleStations(stationIds);
+        const stationsData = await supplierApi.fetchMultipleStations(stationIds);
         
         // Merge with location data
         const stations = stationsData.map(stationData => {
@@ -350,8 +354,9 @@ app.get('/api/battery/:batteryId', validateBatteryId, async (req, res) => {
     }
 
     try {
+        console.log(`Fetching battery data for ${customBatteryId} -> ${realBatteryId}`);
         // Use the ChargeNow API module to find battery
-        const result = await chargenowApi.findBatteryById(realBatteryId);
+        const result = await supplierApi.findBatteryById(realBatteryId);
         
         if (result.success) {
             // Cache the result
@@ -361,7 +366,8 @@ app.get('/api/battery/:batteryId', validateBatteryId, async (req, res) => {
             });
             res.json(result.data);
         } else {
-            res.status(404).json({ error: result.error });
+            console.error(`Battery lookup failed for ${realBatteryId}:`, result.error);
+            res.status(404).json({ error: result.error || "Battery not found" });
         }
     } catch (error) {
         console.error("Error fetching battery data:", error);
@@ -475,7 +481,7 @@ const startBackgroundPolling = () => {
     const stationIds = locationManager.getAllIds();
     
     // Poll station data every 30 seconds
-    stationPollingStop = chargenowApi.pollStationData(
+    stationPollingStop = supplierApi.pollStationData(
         stationIds,
         30000, // 30 seconds
         (error, data) => {
@@ -508,7 +514,7 @@ const startBackgroundPolling = () => {
     );
     
     // Poll battery orders every 60 seconds
-    batteryPollingStop = chargenowApi.pollBatteryOrders(
+    batteryPollingStop = supplierApi.pollBatteryOrders(
         60000, // 60 seconds
         (error, data) => {
             if (error) {
@@ -525,7 +531,7 @@ const startBackgroundPolling = () => {
 };
 
 // Check API health on startup
-chargenowApi.checkApiHealth().then(isHealthy => {
+supplierApi.checkApiHealth().then(isHealthy => {
     if (isHealthy) {
         console.log('ChargeNow API is healthy');
         startBackgroundPolling();
@@ -534,6 +540,11 @@ chargenowApi.checkApiHealth().then(isHealthy => {
         setTimeout(startBackgroundPolling, 30000);
     }
 });
+
+// Start Energo API token keep-alive to prevent token expiration
+// This runs in the background and sends a request every minute
+let energoTokenKeepAliveStop = null;
+energoTokenKeepAliveStop = supplierApi.startEnergoTokenKeepAlive('RL3D52000012', 60000);
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, '0.0.0.0', () => {
