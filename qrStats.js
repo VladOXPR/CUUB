@@ -79,8 +79,9 @@ function saveStats() {
  * @param {string} userAgent - Visitor user agent
  */
 function trackVisit(pagePath, ip, userAgent) {
-    // Skip tracking for demo routes
-    if (pagePath.startsWith('/demo')) {
+    // Skip tracking for demo, home, and admin routes
+    const skipPaths = ['/', '/demo', '/admin', '/admin.html', '/qrStats.html', '/stats'];
+    if (skipPaths.includes(pagePath) || pagePath.startsWith('/demo')) {
         return;
     }
     
@@ -91,42 +92,36 @@ function trackVisit(pagePath, ip, userAgent) {
     const dateKey = now.toISOString().split('T')[0]; // YYYY-MM-DD
     const hourKey = `${dateKey}-${now.getHours()}`; // YYYY-MM-DD-HH
     
-    // Track total visits
-    analyticsData.totalVisits++;
-    
-    // Track unique visitors
-    analyticsData.uniqueVisitors.add(visitorId);
-    
-    // Track daily visits
-    analyticsData.dailyVisits.set(dateKey, (analyticsData.dailyVisits.get(dateKey) || 0) + 1);
-    
-    // Track hourly visits
-    analyticsData.hourlyVisits.set(hourKey, (analyticsData.hourlyVisits.get(hourKey) || 0) + 1);
-    
-    // Track specific page types
-    if (pagePath === '/') {
-        analyticsData.landingPageVisits++;
-        // Log landing page visit
-        analyticsData.visitLog.push({
-            date: dateKey,
-            batteryId: 'home',
-            timestamp: now.toISOString()
-        });
-    } else if (pagePath.length > 1) {
-        // This is a battery ID page (QR code scan)
-        analyticsData.batteryPageVisits++;
+    // Only track battery ID pages (QR code scans)
+    if (pagePath.length > 1) {
         const batteryId = pagePath.substring(1);
+        
+        // Track total visits
+        analyticsData.totalVisits++;
+        
+        // Track unique visitors
+        analyticsData.uniqueVisitors.add(visitorId);
+        
+        // Track daily visits
+        analyticsData.dailyVisits.set(dateKey, (analyticsData.dailyVisits.get(dateKey) || 0) + 1);
+        
+        // Track hourly visits
+        analyticsData.hourlyVisits.set(hourKey, (analyticsData.hourlyVisits.get(hourKey) || 0) + 1);
+        
+        // Track battery page visits
+        analyticsData.batteryPageVisits++;
         analyticsData.visitsByBatteryId.set(batteryId, (analyticsData.visitsByBatteryId.get(batteryId) || 0) + 1);
+        
         // Log battery page visit
         analyticsData.visitLog.push({
             date: dateKey,
             batteryId: batteryId,
             timestamp: now.toISOString()
         });
+        
+        // Save data to file after each update
+        saveStats();
     }
-    
-    // Save data to file after each update
-    saveStats();
 }
 
 /**

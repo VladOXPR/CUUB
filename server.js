@@ -63,6 +63,11 @@ app.get('/map.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/map.html'));
 });
 
+// Stats page route
+app.get('/stats', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/qrStats.html'));
+});
+
 // Landing page route with analytics tracking
 app.get('/', trackAnalytics, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/index-backup.html'));
@@ -73,8 +78,9 @@ app.get('/:batteryId', (req, res, next) => {
     const batteryId = req.params.batteryId;
     
     // Skip static files and other non-battery ID routes
-    if (batteryId.includes('.') || batteryId === 'favicon.ico' || batteryId === 'robots.txt' || batteryId === 'sitemap.xml') {
-        return next(); // Let static middleware handle these
+    const skipRoutes = ['stats', 'admin', 'map', 'favicon.ico', 'robots.txt', 'sitemap.xml'];
+    if (batteryId.includes('.') || skipRoutes.includes(batteryId)) {
+        return next(); // Let other routes or static middleware handle these
     }
     
     // Apply analytics tracking for valid battery IDs
