@@ -9,6 +9,7 @@ const batteryIdMap = require('./public/batteryIdMap');
 const { locationManager } = require('./locations.js');
 const compression = require('compression');
 const supplierApi = require('./supplierApi');
+const qrStats = require('./qrStats');
 
 const app = express();
 
@@ -35,64 +36,6 @@ app.use((req, res, next) => {
 const apiCache = new Map();
 const CACHE_TTL = 10000; // 10 seconds
 
-// Analytics storage
-let analyticsData = {
-    totalVisits: 0,
-    landingPageVisits: 0,
-    batteryPageVisits: 0,
-    uniqueVisitors: new Set(),
-    visitsByBatteryId: new Map(),
-    dailyVisits: new Map(),
-    hourlyVisits: new Map()
-};
-
-// Database file path
-const DB_FILE = path.join(__dirname, 'db.json');
-
-// Load analytics data from JSON file
-function loadAnalyticsData() {
-    try {
-        if (fs.existsSync(DB_FILE)) {
-            const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-            analyticsData = {
-                totalVisits: data.analytics.totalVisits || 0,
-                landingPageVisits: data.analytics.landingPageVisits || 0,
-                batteryPageVisits: data.analytics.batteryPageVisits || 0,
-                uniqueVisitors: new Set(data.analytics.uniqueVisitors || []),
-                visitsByBatteryId: new Map(Object.entries(data.analytics.visitsByBatteryId || {})),
-                dailyVisits: new Map(Object.entries(data.analytics.dailyVisits || {})),
-                hourlyVisits: new Map(Object.entries(data.analytics.hourlyVisits || {}))
-            };
-            console.log('Analytics data loaded from database');
-        } else {
-            console.log('No existing analytics database found, starting fresh');
-        }
-    } catch (error) {
-        console.error('Error loading analytics data:', error);
-        console.log('Starting with fresh analytics data');
-    }
-}
-
-// Save analytics data to JSON file
-function saveAnalyticsData() {
-    try {
-        const data = {
-            analytics: {
-                totalVisits: analyticsData.totalVisits,
-                landingPageVisits: analyticsData.landingPageVisits,
-                batteryPageVisits: analyticsData.batteryPageVisits,
-                uniqueVisitors: Array.from(analyticsData.uniqueVisitors),
-                visitsByBatteryId: Object.fromEntries(analyticsData.visitsByBatteryId),
-                dailyVisits: Object.fromEntries(analyticsData.dailyVisits),
-                hourlyVisits: Object.fromEntries(analyticsData.hourlyVisits)
-            }
-        };
-        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-        console.log('Analytics data saved to database');
-    } catch (error) {
-        console.error('Error saving analytics data:', error);
-    }
-}
 
 const getCachedData = (key) => {
     const cached = apiCache.get(key);
@@ -103,51 +46,8 @@ const getCachedData = (key) => {
     return null;
 };
 
-// Analytics tracking middleware - only for specific routes
-const trackAnalytics = (req, res, next) => {
-    const path = req.path;
-    const userAgent = req.get('User-Agent') || '';
-    const ip = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
-    
-    // Skip tracking for demo routes
-    if (path.startsWith('/demo')) {
-        return next();
-    }
-    
-    // Create a simple visitor ID based on IP and User Agent
-    const visitorId = `${ip}-${userAgent}`.substring(0, 50);
-    
-    const now = new Date();
-    const dateKey = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const hourKey = `${dateKey}-${now.getHours()}`; // YYYY-MM-DD-HH
-    
-    // Track total visits
-    analyticsData.totalVisits++;
-    
-    // Track unique visitors
-    analyticsData.uniqueVisitors.add(visitorId);
-    
-    // Track daily visits
-    analyticsData.dailyVisits.set(dateKey, (analyticsData.dailyVisits.get(dateKey) || 0) + 1);
-    
-    // Track hourly visits
-    analyticsData.hourlyVisits.set(hourKey, (analyticsData.hourlyVisits.get(hourKey) || 0) + 1);
-    
-    // Track specific page types
-    if (path === '/') {
-        analyticsData.landingPageVisits++;
-    } else if (path.length > 1) {
-        // This is a battery ID page
-        analyticsData.batteryPageVisits++;
-        const batteryId = path.substring(1);
-        analyticsData.visitsByBatteryId.set(batteryId, (analyticsData.visitsByBatteryId.get(batteryId) || 0) + 1);
-    }
-    
-    // Save data to file after each update
-    saveAnalyticsData();
-    
-    next();
-};
+// Analytics tracking middleware - uses qrStats module
+const trackAnalytics = qrStats.trackingMiddleware;
 
 // Static files with caching
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -383,17 +283,7 @@ app.get('/api/battery/:batteryId', validateBatteryId, async (req, res) => {
 // Analytics API endpoints
 app.get('/api/analytics', (req, res) => {
     try {
-        const analytics = {
-            totalVisits: analyticsData.totalVisits,
-            landingPageVisits: analyticsData.landingPageVisits,
-            batteryPageVisits: analyticsData.batteryPageVisits,
-            uniqueVisitors: analyticsData.uniqueVisitors.size,
-            visitsByBatteryId: Object.fromEntries(analyticsData.visitsByBatteryId),
-            dailyVisits: Object.fromEntries(analyticsData.dailyVisits),
-            hourlyVisits: Object.fromEntries(analyticsData.hourlyVisits),
-            lastUpdated: new Date().toISOString()
-        };
-        res.json(analytics);
+        res.json(qrStats.getStats());
     } catch (error) {
         console.error('Error fetching analytics:', error);
         res.status(500).json({ error: 'Failed to fetch analytics data' });
@@ -402,18 +292,7 @@ app.get('/api/analytics', (req, res) => {
 
 app.get('/api/analytics/summary', (req, res) => {
     try {
-        const summary = {
-            totalVisits: analyticsData.totalVisits,
-            landingPageVisits: analyticsData.landingPageVisits,
-            batteryPageVisits: analyticsData.batteryPageVisits,
-            uniqueVisitors: analyticsData.uniqueVisitors.size,
-            topBatteryIds: Array.from(analyticsData.visitsByBatteryId.entries())
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10)
-                .map(([id, visits]) => ({ batteryId: id, visits })),
-            lastUpdated: new Date().toISOString()
-        };
-        res.json(summary);
+        res.json(qrStats.getStatsSummary());
     } catch (error) {
         console.error('Error fetching analytics summary:', error);
         res.status(500).json({ error: 'Failed to fetch analytics summary' });
@@ -468,7 +347,7 @@ process.on('SIGINT', () => {
 });
 
 // Load analytics data on startup
-loadAnalyticsData();
+qrStats.loadStats();
 
 // Background polling for ChargeNow API
 let stationPollingStop = null;

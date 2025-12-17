@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Stats</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #000;
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .total-card {
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .total-label {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .total-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: #009FFF;
+        }
+        .list-card {
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 20px;
+        }
+        .list-header {
+            font-size: 16px;
+            color: #888;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #333;
+        }
+        .day-item {
+            border-bottom: 1px solid #222;
+        }
+        .day-item:last-child {
+            border-bottom: none;
+        }
+        .day-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            cursor: pointer;
+        }
+        .day-row:hover {
+            background: #222;
+            margin: 0 -20px;
+            padding: 12px 20px;
+        }
+        .day-date {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .day-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .day-visits {
+            color: #009FFF;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .arrow {
+            color: #666;
+            transition: transform 0.2s;
+        }
+        .arrow.open {
+            transform: rotate(90deg);
+        }
+        .links-list {
+            display: none;
+            padding: 0 0 12px 16px;
+        }
+        .links-list.open {
+            display: block;
+        }
+        .link-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            color: #aaa;
+            font-size: 14px;
+        }
+        .link-id {
+            color: #fff;
+        }
+        .link-time {
+            color: #666;
+        }
+        .empty {
+            color: #666;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Stats</h1>
+        
+        <div class="total-card">
+            <div class="total-label">Total Visits</div>
+            <div class="total-number" id="totalVisits">-</div>
+        </div>
+        
+        <div class="list-card">
+            <div class="list-header">Visits by Day</div>
+            <div id="dailyList">
+                <div class="empty">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let visitLog = [];
+        
+        function formatDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+        
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+        
+        function toggleDay(dateKey) {
+            const linksList = document.getElementById(`links-${dateKey}`);
+            const arrow = document.getElementById(`arrow-${dateKey}`);
+            
+            if (linksList.classList.contains('open')) {
+                linksList.classList.remove('open');
+                arrow.classList.remove('open');
+            } else {
+                linksList.classList.add('open');
+                arrow.classList.add('open');
+            }
+        }
+        
+        function getLinksForDate(dateKey) {
+            return visitLog
+                .filter(v => v.date === dateKey)
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        }
+        
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/analytics');
+                const data = await response.json();
+                
+                document.getElementById('totalVisits').textContent = data.totalVisits || 0;
+                visitLog = data.visitLog || [];
+                
+                const dailyList = document.getElementById('dailyList');
+                const dailyVisits = data.dailyVisits || {};
+                const sortedDaily = Object.entries(dailyVisits)
+                    .sort((a, b) => b[0].localeCompare(a[0]));
+                
+                if (sortedDaily.length === 0) {
+                    dailyList.innerHTML = '<div class="empty">No visits yet</div>';
+                    return;
+                }
+                
+                dailyList.innerHTML = sortedDaily.map(([date, count]) => {
+                    const links = getLinksForDate(date);
+                    const linksHtml = links.length > 0 
+                        ? links.map(v => `
+                            <div class="link-item">
+                                <span class="link-id">${v.batteryId}</span>
+                                <span class="link-time">${formatTime(v.timestamp)}</span>
+                            </div>
+                        `).join('')
+                        : '<div class="link-item"><span class="link-id">No detailed data</span></div>';
+                    
+                    return `
+                        <div class="day-item">
+                            <div class="day-row" onclick="toggleDay('${date}')">
+                                <span class="day-date">${formatDate(date)}</span>
+                                <div class="day-info">
+                                    <span class="day-visits">${count}</span>
+                                    <span class="arrow" id="arrow-${date}">▶</span>
+                                </div>
+                            </div>
+                            <div class="links-list" id="links-${date}">
+                                ${linksHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                document.getElementById('dailyList').innerHTML = '<div class="empty">Error loading stats</div>';
+            }
+        }
+        
+        loadStats();
+    </script>
+</body>
+</html>
