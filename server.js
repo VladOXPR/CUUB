@@ -116,7 +116,7 @@ app.get('/api/stations', async (req, res) => {
     const stationIds = locationManager.getAllIds();
 
     try {
-        // Use the ChargeNow API module to fetch station data
+        // Fetch station data (automatically uses ChargeNow or Energo API based on station ID)
         const stationsData = await supplierApi.fetchMultipleStations(stationIds);
         
         // Merge with location data

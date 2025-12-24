@@ -76,6 +76,18 @@ const locations = {
             saturday: { open: '11:00', close: '03:00' },
             sunday: { open: '11:00', close: '02:00' }
         }
+    },
+    'CUBT062510000030': {
+        id: 'CUBT062510000030',
+        name: 'Hello Jasmine',
+        address: 'Hello Jasmine, Chicago, IL',
+        coordinates: [-87.65306, 41.92163]
+    },
+    'CUBT062510000025': {
+        id: 'CUBT062510000025',
+        name: 'George St Pub',
+        address: 'george st pub, Chicago, IL.',
+        coordinates: [-87.64926, 41.93443]
     }
 };
 

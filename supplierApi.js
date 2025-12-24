@@ -212,14 +212,100 @@ async function findBatteryById(batteryId) {
 }
 
 /**
+ * Fetch station/cabinet information by cabinet ID using the Energo API
+ * 
+ * @param {string} cabinetId - The cabinet ID (e.g., 'RL3T062411030004')
+ * @returns {Promise<Object>} Station data including available and occupied slots
+ */
+async function fetchEnergoStationData(cabinetId) {
+    try {
+        const url = `${ENERGO_API_BASE}/cabinet?cabinetId=${encodeURIComponent(cabinetId)}`;
+        
+        console.log(`Calling Energo API for station: ${cabinetId}`);
+        console.log(`URL: ${url}`);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${ENERGO_AUTH_TOKEN}`,
+                'Referer': 'https://backend.energo.vip/device/list',
+                'oid': ENERGO_OID,
+                'Content-Type': 'application/json'
+            },
+            timeout: DEFAULT_TIMEOUT,
+            redirect: 'follow'
+        });
+
+        console.log(`Energo API response status: ${response.status}`);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Energo API error response: ${errorText}`);
+            return {
+                id: cabinetId,
+                error: true,
+                status: response.status,
+                message: `API request failed with status: ${response.status}`
+            };
+        }
+
+        const result = await response.json();
+        console.log(`Energo API response:`, JSON.stringify(result, null, 2));
+
+        // Check if we have any cabinet data
+        if (!result.content || result.content.length === 0) {
+            console.log(`No cabinet data found for ${cabinetId}`);
+            return {
+                id: cabinetId,
+                error: true,
+                message: "Cabinet not found in API data"
+            };
+        }
+
+        // Get the first cabinet (should only be one)
+        const cabinet = result.content[0];
+        const positionInfo = cabinet.positionInfo || {};
+        
+        // Extract returnNum (empty slots) and borrowNum (occupied slots)
+        const available = positionInfo.returnNum || 0; // Empty slots - available to return
+        const occupied = positionInfo.borrowNum || 0;  // Occupied slots - batteries available to take
+
+        return {
+            id: cabinetId,
+            available: available,
+            occupied: occupied,
+            rawData: cabinet,
+            error: false
+        };
+
+    } catch (error) {
+        console.error(`Error fetching Energo station ${cabinetId}:`, error.message);
+        return {
+            id: cabinetId,
+            error: true,
+            message: error.message
+        };
+    }
+}
+
+/**
  * Fetch multiple stations data in parallel
+ * Detects Energo stations (IDs starting with "CUBT") and uses appropriate API
  * 
  * @param {string[]} stationIds - Array of station device IDs
  * @returns {Promise<Object[]>} Array of station data objects
  */
 async function fetchMultipleStations(stationIds) {
     try {
-        const stationPromises = stationIds.map(id => fetchStationData(id));
+        const stationPromises = stationIds.map(id => {
+            // Energo stations have IDs starting with "CUBT"
+            if (id.startsWith('CUBT')) {
+                return fetchEnergoStationData(id);
+            } else {
+                // ChargeNow stations (DTN, BJH, etc.)
+                return fetchStationData(id);
+            }
+        });
         const results = await Promise.all(stationPromises);
         return results;
     } catch (error) {
@@ -371,6 +457,7 @@ function startEnergoTokenKeepAlive(batteryId = 'RL3D52000012', intervalMs = 6000
 module.exports = {
     // Single operations
     fetchStationData,
+    fetchEnergoStationData,
     fetchBatteryOrders,
     findBatteryById,
     
