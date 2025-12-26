@@ -88,6 +88,18 @@ const locations = {
         name: 'George St Pub',
         address: 'george st pub, Chicago, IL.',
         coordinates: [-87.64926, 41.93443]
+    },
+    'CUBT062510000027': {
+        id: 'CUBT062510000027',
+        name: 'Maison Marcel',
+        address: 'Maison Marcel, Chicago, IL',
+        coordinates: [-87.64451, 41.93822]
+    },
+    'CUBT062510000018': {
+        id: 'CUBT062510000018',
+        name: 'SAADA Beauty Salon',
+        address: 'SAADA Beauty Salon, Chicago, IL',
+        coordinates: [-87.63975, 41.93826]
     }
 };
 
