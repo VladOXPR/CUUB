@@ -49,12 +49,8 @@ const getCachedData = (key) => {
 // Analytics tracking middleware - uses qrStats module
 const trackAnalytics = qrStats.trackingMiddleware;
 
-// Static files with caching
-app.use(express.static(path.join(__dirname, 'public'), {
-    maxAge: process.env.NODE_ENV === 'production' ? '1d' : '0'
-}));
-
-// Admin route (must come before the catch-all battery ID route)
+// Specific routes (must come before static middleware)
+// Admin route
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/admin.html'));
 });
@@ -68,17 +64,27 @@ app.get('/stats', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/qrStats.html'));
 });
 
+// Key management page route
+app.get('/key', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/key.html'));
+});
+
 // Landing page route with analytics tracking
 app.get('/', trackAnalytics, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/index-backup.html'));
 });
+
+// Static files with caching (after specific routes)
+app.use(express.static(path.join(__dirname, 'public'), {
+    maxAge: process.env.NODE_ENV === 'production' ? '1d' : '0'
+}));
 
 // Battery ID routes with analytics tracking (only for valid battery IDs)
 app.get('/:batteryId', (req, res, next) => {
     const batteryId = req.params.batteryId;
     
     // Skip static files and other non-battery ID routes
-    const skipRoutes = ['stats', 'admin', 'map', 'favicon.ico', 'robots.txt', 'sitemap.xml'];
+    const skipRoutes = ['stats', 'admin', 'map', 'key', 'favicon.ico', 'robots.txt', 'sitemap.xml'];
     if (batteryId.includes('.') || skipRoutes.includes(batteryId)) {
         return next(); // Let other routes or static middleware handle these
     }
@@ -305,6 +311,37 @@ app.get('/api/analytics/summary', (req, res) => {
     }
 });
 
+// Energo token API endpoints
+app.get('/api/energo-token', (req, res) => {
+    try {
+        const token = supplierApi.getEnergoToken();
+        res.json({ token: token || '' });
+    } catch (error) {
+        console.error('Error fetching Energo token:', error);
+        res.status(500).json({ error: 'Failed to fetch token' });
+    }
+});
+
+app.post('/api/energo-token', (req, res) => {
+    try {
+        const { token } = req.body;
+        
+        if (!token || typeof token !== 'string' || !token.trim()) {
+            return res.status(400).json({ error: 'Token is required' });
+        }
+
+        const success = supplierApi.updateEnergoToken(token);
+        
+        if (success) {
+            res.json({ success: true, message: 'Token updated successfully' });
+        } else {
+            res.status(500).json({ error: 'Failed to update token' });
+        }
+    } catch (error) {
+        console.error('Error updating Energo token:', error);
+        res.status(500).json({ error: 'Failed to update token' });
+    }
+});
 
 // Logging middleware for development
 if (process.env.NODE_ENV !== 'production') {

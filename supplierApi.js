@@ -7,6 +7,8 @@
  */
 
 const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path');
 
 // ChargeNow API Configuration
 const CHARGENOW_API_BASE = 'https://developer.chargenow.top/cdb-open-api/v1';
@@ -15,7 +17,41 @@ const DEFAULT_TIMEOUT = 10000; // 10 seconds
 
 // Energo API Configuration
 const ENERGO_API_BASE = 'https://backend.energo.vip/api';
-const ENERGO_AUTH_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJqdGkiOiI3MTU4OWE0NGRkZDQ0YjJjYWVmYWEzYTFjMjQzMWYwMyIsInVzZXIiOiJjdWJVU0EyMDI1IiwiaXNBcGlUb2tlbiI6ZmFsc2UsInN1YiI6ImN1YlVTQTIwMjUiLCJBUElLRVkiOiJidXpOTEQyMDI0IiwiZXhwIjoxNzY5Mzc0Nzg1fQ._hE-vDBe1q5X-1l_twD8227ugnhrYw1lfcxlZdMYxqCjxw0yF8qYPSwiK8IaG63QJl-ylLgzWyLFSi1enzl8vQ';
+const ENERGO_TOKEN_FILE = path.join(__dirname, 'energoToken.json');
+
+/**
+ * Get Energo auth token from config file
+ * @returns {string} The auth token
+ */
+function getEnergoToken() {
+    try {
+        if (fs.existsSync(ENERGO_TOKEN_FILE)) {
+            const data = JSON.parse(fs.readFileSync(ENERGO_TOKEN_FILE, 'utf8'));
+            return data.token || '';
+        }
+    } catch (error) {
+        console.error('Error reading Energo token:', error);
+    }
+    return '';
+}
+
+/**
+ * Update Energo auth token in config file
+ * @param {string} token - The new auth token
+ * @returns {Promise<boolean>} True if successful
+ */
+function updateEnergoToken(token) {
+    try {
+        const data = { token: token.trim() };
+        fs.writeFileSync(ENERGO_TOKEN_FILE, JSON.stringify(data, null, 2));
+        console.log('Energo token updated successfully');
+        return true;
+    } catch (error) {
+        console.error('Error updating Energo token:', error);
+        return false;
+    }
+}
+
 const ENERGO_OID = '3526';
 
 /**
@@ -138,7 +174,7 @@ async function findBatteryById(batteryId) {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${ENERGO_AUTH_TOKEN}`,
+                'Authorization': `Bearer ${getEnergoToken()}`,
                 'Referer': 'https://backend.energo.vip/order/lease-order',
                 'oid': ENERGO_OID,
                 'Content-Type': 'application/json'
@@ -227,7 +263,7 @@ async function fetchEnergoStationData(cabinetId) {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${ENERGO_AUTH_TOKEN}`,
+                'Authorization': `Bearer ${getEnergoToken()}`,
                 'Referer': 'https://backend.energo.vip/device/list',
                 'oid': ENERGO_OID,
                 'Content-Type': 'application/json'
@@ -421,7 +457,7 @@ function startEnergoTokenKeepAlive(batteryId = 'RL3D52000012', intervalMs = 6000
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${ENERGO_AUTH_TOKEN}`,
+                    'Authorization': `Bearer ${getEnergoToken()}`,
                     'Referer': 'https://backend.energo.vip/order/lease-order',
                     'oid': ENERGO_OID,
                     'Content-Type': 'application/json'
@@ -471,6 +507,8 @@ module.exports = {
     // Utilities
     checkApiHealth,
     startEnergoTokenKeepAlive,
+    getEnergoToken,
+    updateEnergoToken,
     
     // Constants (if needed externally)
     CHARGENOW_API_BASE

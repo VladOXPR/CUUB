@@ -100,6 +100,18 @@ const locations = {
         name: 'SAADA Beauty Salon',
         address: 'SAADA Beauty Salon, Chicago, IL',
         coordinates: [-87.63975, 41.93826]
+    },
+    'CUBT062510000012': {
+        id: 'CUBT062510000012',
+        name: 'Irish Eyes',
+        address: 'Irish Eyes, Chicago, IL',
+        coordinates: [-87.65170, 41.92771]
+    },
+    'CUBT062510000013': {
+        id: 'CUBT062510000013',
+        name: 'Neva Hangry',
+        address: 'Neva Hangry, Chicago, IL',
+        coordinates: [-87.65387, 41.94369]
     }
 };
 

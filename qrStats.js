@@ -80,7 +80,7 @@ function saveStats() {
  */
 function trackVisit(pagePath, ip, userAgent) {
     // Skip tracking for demo, home, and admin routes
-    const skipPaths = ['/', '/demo', '/admin', '/admin.html', '/qrStats.html', '/stats'];
+    const skipPaths = ['/', '/demo', '/admin', '/admin.html', '/qrStats.html', '/stats', '/key'];
     if (skipPaths.includes(pagePath) || pagePath.startsWith('/demo')) {
         return;
     }
