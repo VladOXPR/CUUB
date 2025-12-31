@@ -112,6 +112,24 @@ const locations = {
         name: 'Neva Hangry',
         address: 'Neva Hangry, Chicago, IL',
         coordinates: [-87.65387, 41.94369]
+    },
+    'CUBT062510000008': {
+        id: 'CUBT062510000008',
+        name: 'Dog House, Lincoln Park',
+        address: 'Dog House, Lincoln Park, Chicago, IL',
+        coordinates: [-87.65082, 41.92678]
+    },
+    'CUBT062510000029': {
+        id: 'CUBT062510000029',
+        name: 'Annoyance theater',
+        address: 'Annoyance theater, Chicago, IL',
+        coordinates: [-87.65132, 41.93985]
+    },
+    'CUBT062510000001': {
+        id: 'CUBT062510000001',
+        name: 'Sila\'s Medeteranian',
+        address: 'Sila\'s Medeteranian, Chicago, IL',
+        coordinates: [-87.64448, 41.93813]
     }
 };
 
