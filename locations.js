@@ -130,6 +130,18 @@ const locations = {
         name: 'Sila\'s Medeteranian',
         address: 'Sila\'s Medeteranian, Chicago, IL',
         coordinates: [-87.64448, 41.93813]
+    },
+    'CUBT062510000019': {
+        id: 'CUBT062510000019',
+        name: 'Halligan Bar',
+        address: 'Halligan Bar, Chicago, IL',
+        coordinates: [-87.64613, 41.92341]
+    },
+    'CUBT062510000006': {
+        id: 'CUBT062510000006',
+        name: 'Hook and Latter',
+        address: 'Hook and Latter, Chicago, IL',
+        coordinates: [-87.64598, 41.92331]
     }
 };
 
