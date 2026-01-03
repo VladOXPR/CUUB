@@ -277,11 +277,12 @@ async function fetchEnergoStationData(cabinetId) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`Energo API error response: ${errorText}`);
+            console.log(`Using default values for ${cabinetId}: 4 to take, 2 to return`);
             return {
                 id: cabinetId,
-                error: true,
-                status: response.status,
-                message: `API request failed with status: ${response.status}`
+                available: 2,  // Default: 2 to return
+                occupied: 4,   // Default: 4 to take
+                error: false
             };
         }
 
@@ -290,11 +291,12 @@ async function fetchEnergoStationData(cabinetId) {
 
         // Check if we have any cabinet data
         if (!result.content || result.content.length === 0) {
-            console.log(`No cabinet data found for ${cabinetId}`);
+            console.log(`No cabinet data found for ${cabinetId}, using default values`);
             return {
                 id: cabinetId,
-                error: true,
-                message: "Cabinet not found in API data"
+                available: 2,  // Default: 2 to return
+                occupied: 4,   // Default: 4 to take
+                error: false
             };
         }
 
@@ -316,10 +318,12 @@ async function fetchEnergoStationData(cabinetId) {
 
     } catch (error) {
         console.error(`Error fetching Energo station ${cabinetId}:`, error.message);
+        console.log(`Using default values for ${cabinetId}: 4 to take, 2 to return`);
         return {
             id: cabinetId,
-            error: true,
-            message: error.message
+            available: 2,  // Default: 2 to return
+            occupied: 4,   // Default: 4 to take
+            error: false
         };
     }
 }
