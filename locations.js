@@ -142,6 +142,12 @@ const locations = {
         name: 'Hook and Latter',
         address: 'Hook and Latter, Chicago, IL',
         coordinates: [-87.64598, 41.92331]
+    },
+    'CUBT062510000022': {
+        id: 'CUBT062510000022',
+        name: 'Clover Lincoln Park',
+        address: 'Clover Lincoln Park, Chicago, IL',
+        coordinates: [-87.64953, 41.93283]
     }
 };
 
